@@ -21,4 +21,9 @@ defmodule McChunkTest do
 
     # TODO check some blocks
   end
+
+  test "palette encoding" do
+    # <<0>> = Palette.encode([])
+  end
+
 end

@@ -16,7 +16,15 @@ defmodule Palette do
   end
 
   def encode(palette) do
-    "" # XXX
+    # TODO could use reduce for this
+    {data, len} = encode_helper(palette)
+    Encode.varint(len) <> data
+  end
+
+  defp encode_helper([]), do: {"", 0}
+  defp encode_helper([val | vals]) do
+    {data, len} = encode_helper(vals)
+    {Encode.varint(val) <> data, len+1}
   end
 
 end
