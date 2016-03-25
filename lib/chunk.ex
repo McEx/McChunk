@@ -26,8 +26,17 @@ defmodule McChunk.Chunk do
     %Chunk{into | x: x, z: z, biome_data: biome_data, sections: sections}
   end
 
-  def encode(chunk) do
-    {"", 0} # XXX
+  # sends full chunk and biome data
+  # TODO optional bitmask to send only those chunks
+  def encode(%Chunk{biome_data: biome_data, sections: sections}) do
+    {data, bit_mask, 16} = Enum.reduce sections, {"", 0, 0},
+      fn section, {data, bit_mask, y} ->
+        case section do
+          nil -> {data, bit_mask, y+1}
+          section -> {data <> Section.encode(section), bit_mask ||| (1 <<< y), y+1}
+        end
+      end
+    {data <> biome_data, bit_mask}
   end
 
 end

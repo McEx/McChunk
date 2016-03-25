@@ -17,11 +17,20 @@ defmodule McChunkTest do
     IO.inspect Enum.map filled_sections, &to_string(&1)
 
     # TODO check some blocks
+
+    {bin_out, bit_mask_out} = Chunk.encode(%Chunk{})
+    # assert bit_mask_in == bit_mask_out
+    # assert bin_in == bin_out
   end
 
   test "chunk decoding" do
     %Chunk{} = Chunk.decode(-1, -1, 0, false, "")
     %Chunk{} = Chunk.decode(-1, -1, 0, true, <<0::2048>>)
+    # TODO
+  end
+
+  test "chunk encoding" do
+    {<<0::2048>>, 0} = Chunk.encode(%Chunk{})
     # TODO
   end
 
