@@ -2,7 +2,7 @@ defmodule McChunk.Section do
   import McChunk.Varint
   alias McChunk.Palette
 
-  defstruct y: 0, palette: [0],
+  defstruct y: 0, palette: [0], block_bits: 1,
             block_data: <<0::4096>>,
             block_light: <<0::4096*4>>,
             sky_light: <<0::4096*4>>
@@ -28,19 +28,24 @@ defmodule McChunk.Section do
 
     # TODO use block_bits for decoding block_data
 
-    {%__MODULE__{y: y, palette: palette, block_data: block_data,
-              block_light: block_light, sky_light: sky_light}, data}
+    {%__MODULE__{y: y, palette: palette, block_bits: block_bits,
+      block_data: block_data, block_light: block_light, sky_light: sky_light}, data}
   end
 
-  def encode(%__MODULE__{palette: palette, block_data: block_data,
-             block_light: block_light, sky_light: sky_light}) do
-    "" # XXX
+  def encode(%__MODULE__{palette: palette, block_bits: block_bits,
+    block_data: block_data, block_light: block_light, sky_light: sky_light}) do
+    <<block_bits>>
+    <> Palette.encode(palette)
+    <> encode_varint(div(byte_size(block_data), 8))
+    <> block_data
+    <> block_light
+    <> sky_light
   end
 
 end
 
 defimpl String.Chars, for: McChunk.Section do
-  def to_string(%McChunk.Section{y: y, palette: palette}) do
-    "#Section<at y=#{y}, #{length(palette)} palette entries>"
+  def to_string(%McChunk.Section{y: y, block_bits: block_bits, palette: palette}) do
+    "#Section<y=#{y}, #{block_bits} bits, palette=#{inspect palette}>"
   end
 end
