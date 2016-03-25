@@ -3,7 +3,7 @@ defmodule McChunk.Chunk do
   alias McChunk.Chunk
   alias McChunk.Section
 
-  defstruct x: 0, z: 0, biome_data: <<0::size(16384)>>, sections: for _ <- 0..15, do: nil
+  defstruct x: 0, z: 0, biome_data: <<0::2048>>, sections: for _ <- 0..15, do: nil
 
   def decode(x, z, bit_mask, has_biome_data, data, into \\ %Chunk{}) do
     {sections, data, 16} = Enum.reduce into.sections, {[], data, 0},
@@ -18,7 +18,7 @@ defmodule McChunk.Chunk do
     sections = Enum.reverse sections
 
     biome_data = if has_biome_data do
-      <<_::size(2048)>> = data
+      <<_::2048>> = data
     else
       into.biome_data
     end

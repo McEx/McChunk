@@ -19,6 +19,12 @@ defmodule McChunkTest do
     # TODO check some blocks
   end
 
+  test "chunk decoding" do
+    %Chunk{} = Chunk.decode(-1, -1, 0, false, "")
+    %Chunk{} = Chunk.decode(-1, -1, 0, true, <<0::2048>>)
+    # TODO
+  end
+
   test "palette decoding" do
     {[], ""} = Palette.decode(<<0>>)
     {[1, 2, 3], ""} = Palette.decode(<<3, 1, 2, 3>>)
