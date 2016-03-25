@@ -1,6 +1,6 @@
 defmodule Section do
-  alias McProtocol.DataTypes.Decode, as: Decode
-  alias McProtocol.DataTypes.Encode, as: Encode
+  alias McProtocol.DataTypes.Decode
+  alias McProtocol.DataTypes.Encode
 
   defstruct y: 0, palette: [0],
             block_data: <<0::size(4096)>>,
@@ -34,4 +34,11 @@ defmodule Section do
     "" # XXX
   end
 
+end
+
+defimpl String.Chars, for: Section do
+  def to_string(%Section{y: y, palette: palette, block_data: block_data,
+                block_light: block_light, sky_light: sky_light}) do
+    "#Section<at y=#{y}, #{length(palette)} palette entries>"
+  end
 end

@@ -11,6 +11,8 @@ defmodule McChunkTest do
     bin_in = File.read! "chunks/chunks/chunk_-10_5_1457918629636.dump"
     chunk = Chunk.decode(-10, 5, bit_mask_in, true, bin_in)
 
+    IO.inspect Enum.map chunk.sections, &to_string(&1)
+
     filled_sections = for section <- chunk.sections |> Enum.filter(&(&1)) do
       [0 | _] = section.palette
       section.y
