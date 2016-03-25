@@ -21,4 +21,10 @@ defmodule McChunk.Palette do
     encode_varint(len) <> data
   end
 
+  def block_bits([]) do 1 end
+  def block_bits([_]) do 1 end
+  def block_bits(palette) do
+    trunc Float.ceil :math.log2 length palette
+  end
+
 end

@@ -54,4 +54,21 @@ defmodule McChunkTest do
     <<3, 1, 0b10101100_00000010::16, 0>> = Palette.encode([1, 300, 0])
   end
 
+  test "calculate block bits for palette" do
+    1 = Palette.block_bits []
+    1 = Palette.block_bits [1]
+    1 = Palette.block_bits [1,2]
+
+    2 = Palette.block_bits Enum.to_list 1..3
+    2 = Palette.block_bits Enum.to_list 1..4
+
+    3 = Palette.block_bits Enum.to_list 1..5
+    3 = Palette.block_bits Enum.to_list 1..8
+
+    4 = Palette.block_bits Enum.to_list 1..9
+    4 = Palette.block_bits Enum.to_list 1..16
+
+    5 = Palette.block_bits Enum.to_list 1..17
+  end
+
 end
