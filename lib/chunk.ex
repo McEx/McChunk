@@ -37,6 +37,27 @@ defmodule McChunk.Chunk do
     {data <> biome_data, bit_mask}
   end
 
+  def get_block(_, {_, y, _}) when y < 0 or y >= 256, do: 0
+  def get_block(chunk, {x, y, z}) do
+    case Enum.at(chunk.sections, div(y, 16)) do
+      nil -> 0 # chunk is loaded, section is empty
+      section -> Section.get_block(section, pos_to_index({x, y, z}))
+    end
+  end
+
+  def set_block(chunk, {x, y, z}, block) when y >= 0 and y < 256 do
+    %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(y, 4),
+      &Section.set_block(&1 || %Section{}, pos_to_index({x, y, z}), block))}
+  end
+
+  def pos_to_index({x, y, z}) when y >= 0 and y < 256 do
+    mod(x, 16) + 16 * mod(z, 16) + 256 * mod(y, 16)
+  end
+
+  defp mod(x, y) when x > 0, do: rem(x, y)
+  defp mod(x, y) when x < 0, do: y + rem(x, y)
+  defp mod(0, y), do: 0
+
   def idmeta_to_data({id, meta}), do: (id <<< 4) ||| meta
   def data_to_idmeta(data), do: {data >>> 4, data &&& 15}
 

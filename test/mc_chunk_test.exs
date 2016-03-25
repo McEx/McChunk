@@ -63,6 +63,39 @@ defmodule McChunkTest do
     # TODO cap at 13, like vanilla does
   end
 
+  test "get/set block" do
+    s = %Section{palette: [42, 123]}
+    # all kinds of coordinates
+    for pos <- [{0, 0, 0}, {15, 255, -9999}] do
+      index = Chunk.pos_to_index(pos)
+      assert 42 == Section.get_block(s, index)
+      s = Section.set_block(s, index, 123)
+      assert 123 == Section.get_block(s, index)
+      s = Section.set_block(s, index, 42)
+      assert 42 == Section.get_block(s, index)
+    end
+    assert s.palette == [42, 123]
+
+    # TODO grow palette and block_array, update block_data
+  end
+
+  test "load chunk -10,5 and check some blocks" do
+    path = "chunks/chunks/chunk_-10_5_1457918629636.dump"
+    chunk = Chunk.decode(-10, 5, 0b1111111, true, File.read! path)
+
+    assert 7 == length Enum.filter chunk.sections, &(&1)
+
+    # IO.inspect to_char_list(chunk.biome_data) |> Enum.filter(&(&1 != 6))
+
+    expected_biome = repeat([6], 256) |> List.to_string
+    assert chunk.biome_data == expected_biome
+
+    assert Enum.at(chunk.sections, 6).palette == [0, 16, 32, 64, 256, 1523, 1524, 1525, 1526]
+
+    expected = [repeat([16, 32, 64, 256], 16), repeat([16], 16), repeat([32], 16), repeat([64], 16), repeat([256], 16), repeat([0], 16)]
+    assert expected == for z <- 0..5, do: for x <- 0..15, do: Chunk.get_block(chunk, {x, 6*16, z})
+  end
+
   test "bulk chunk decode + encode" do
     chunks_dir = "chunks/chunks-1.9.1-pre3-1/"
     chunk_files = File.ls!(chunks_dir)
