@@ -39,14 +39,19 @@ defmodule McChunkTest do
     {[1, 2, 3], ""} = Palette.decode(<<3, 1, 2, 3>>)
 
     # length value larger than one byte
-    {palette, ""} = Palette.decode(<<0b1010110000000010::16, 0::2400>>)
+    {palette, ""} = Palette.decode(<<0b10101100_00000010::16, 0::300*8>>)
     assert length(palette) == 300
     assert Enum.all? Enum.map palette, &(&1 == 0)
+
+    # large entry
+    {[0, 300, 0], ""} = Palette.decode(<<3, 0, 0b10101100_00000010::16, 0>>)
   end
 
   test "palette encoding" do
-    # <<0>> = Palette.encode([])
-    # TODO
+    <<0>> = Palette.encode([])
+    <<2, 123, 32>> = Palette.encode([123, 32])
+    <<0b10101100_00000010::16, 0::300*8>> = Palette.encode(Stream.cycle([0]) |> Enum.take(300))
+    <<3, 1, 0b10101100_00000010::16, 0>> = Palette.encode([1, 300, 0])
   end
 
 end
