@@ -1,4 +1,4 @@
-defmodule Palette do
+defmodule McChunk.Palette do
   alias McProtocol.DataTypes.Decode
   alias McProtocol.DataTypes.Encode
 

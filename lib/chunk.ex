@@ -1,5 +1,7 @@
-defmodule Chunk do
+defmodule McChunk.Chunk do
   use Bitwise
+  alias McChunk.Chunk
+  alias McChunk.Section
 
   defstruct x: 0, z: 0, biome_data: <<0::size(16384)>>, sections: for _ <- 0..15, do: nil
 

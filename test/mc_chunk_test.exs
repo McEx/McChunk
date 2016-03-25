@@ -1,6 +1,7 @@
 defmodule McChunkTest do
   use ExUnit.Case
-  doctest Chunk
+  alias McChunk.Chunk
+  alias McChunk.Palette
 
   test "load chunk and check some blocks" do
     bit_mask_in = 0b1111111 # 127
