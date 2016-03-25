@@ -1,6 +1,5 @@
 defmodule McChunk.Section do
-  alias McProtocol.DataTypes.Decode
-  alias McProtocol.DataTypes.Encode
+  import McChunk.Varint
   alias McChunk.Palette
   alias McChunk.Section
 
@@ -18,7 +17,7 @@ defmodule McChunk.Section do
 
     block_bits = if block_bits == 0 do 13 else block_bits end
 
-    {data_nlongs, data} = Decode.varint(data)
+    {data_nlongs, data} = decode_varint(data)
     data_nbits = data_nlongs * 8 * 8
     <<block_data::size(data_nbits), data::binary>> = data
 

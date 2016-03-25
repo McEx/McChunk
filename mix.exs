@@ -1,4 +1,4 @@
-defmodule McProtocol.Mixfile do
+defmodule McChunk.Mixfile do
   use Mix.Project
 
   def project do
@@ -14,8 +14,7 @@ defmodule McProtocol.Mixfile do
     [applications: [:logger]]
   end
 
-  def deps do
-    []
-  end
+  def deps do [
+  ] end
 
 end
