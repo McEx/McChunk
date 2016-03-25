@@ -27,11 +27,11 @@ defmodule McChunk.Section do
     <<block_light::size(16384), data::binary>> = data
     <<sky_light::size(16384), data::binary>> = data
 
-    {%Section{y: y, palette: palette, block_data: block_data,
+    {%__MODULE__{y: y, palette: palette, block_data: block_data,
               block_light: block_light, sky_light: sky_light}, data}
   end
 
-  def encode(%Section{y: y, palette: palette, block_data: block_data,
+  def encode(%__MODULE__{y: y, palette: palette, block_data: block_data,
              block_light: block_light, sky_light: sky_light}) do
     "" # XXX
   end

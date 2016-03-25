@@ -5,7 +5,7 @@ defmodule McChunk.Chunk do
 
   defstruct x: 0, z: 0, biome_data: <<0::2048>>, sections: for _ <- 0..15, do: nil
 
-  def decode(x, z, bit_mask, has_biome_data, data, into \\ %Chunk{}) do
+  def decode(x, z, bit_mask, has_biome_data, data, into \\ %__MODULE__{}) do
     {sections, data, 16} = Enum.reduce into.sections, {[], data, 0},
       fn old_section, {sections, data, y} ->
         {section, data} = if ((bit_mask >>> y) &&& 1) != 0 do
@@ -23,12 +23,12 @@ defmodule McChunk.Chunk do
       into.biome_data
     end
 
-    %Chunk{into | x: x, z: z, biome_data: biome_data, sections: sections}
+    %__MODULE__{into | x: x, z: z, biome_data: biome_data, sections: sections}
   end
 
   # sends full chunk and biome data
   # TODO optional bitmask to send only those chunks
-  def encode(%Chunk{biome_data: biome_data, sections: sections}) do
+  def encode(%__MODULE__{biome_data: biome_data, sections: sections}) do
     {data, bit_mask, 16} = Enum.reduce sections, {"", 0, 0},
       fn section, {data, bit_mask, y} ->
         case section do
