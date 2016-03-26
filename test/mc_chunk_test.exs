@@ -1,6 +1,7 @@
 defmodule McChunkTest do
   use ExUnit.Case
   alias McChunk.Chunk
+  alias McChunk.Section
   alias McChunk.Palette
 
   test "chunk decoding" do
@@ -12,6 +13,16 @@ defmodule McChunkTest do
   test "chunk encoding" do
     {<<0::2048>>, 0} = Chunk.encode(%Chunk{})
     # TODO data, into, partial, no sky light
+  end
+
+  test "section decoding" do
+    {%Section{}, ""} = Section.decode(-1, <<1, 1, 0, 64, 0::4096*9>>)
+    # TODO data, global palette, no sky light
+  end
+
+  test "section encoding" do
+    <<1, 1, 0, 64, 0::4096*9>> = Section.encode(%Section{})
+    # TODO data, global palette, no sky light
   end
 
   test "palette decoding" do
