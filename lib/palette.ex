@@ -16,7 +16,7 @@ defmodule McChunk.Palette do
 
   def encode(palette) do
     {data, len} = Enum.reduce palette, {"", 0}, fn val, {data, len} ->
-      {encode_varint(val) <> data, len+1}
+      {data <> encode_varint(val), len+1}
     end
     encode_varint(len) <> data
   end
