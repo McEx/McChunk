@@ -67,7 +67,6 @@ defmodule McChunkTest do
   end
 
   test "palette decoding" do
-    {[], ""} = Palette.decode(<<0>>)
     {[1, 2, 3], ""} = Palette.decode(<<3, 1, 2, 3>>)
 
     # length value larger than one byte
@@ -80,7 +79,7 @@ defmodule McChunkTest do
   end
 
   test "palette encoding" do
-    <<0>> = Palette.encode([])
+    "" = Palette.encode([])
     <<2, 123, 32>> = Palette.encode([123, 32])
     <<0b10101100_00000010::16, 0::300*8>> = Palette.encode(Stream.cycle([0]) |> Enum.take(300))
     <<3, 1, 0b10101100_00000010::16, 0>> = Palette.encode([1, 300, 0])
