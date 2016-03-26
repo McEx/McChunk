@@ -1,6 +1,5 @@
 defmodule McChunk.Chunk do
   use Bitwise
-  alias McChunk.Chunk
   alias McChunk.Section
 
   defstruct x: 0, z: 0, biome_data: <<0::2048>>, sections: for _ <- 0..15, do: nil
@@ -17,7 +16,7 @@ defmodule McChunk.Chunk do
       end
     sections = Enum.reverse sections
 
-    biome_data = if has_biome_data do
+    <<biome_data::bitstring-size(2048)>> = if has_biome_data do
       <<_::2048>> = data
     else
       into.biome_data

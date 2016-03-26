@@ -4,34 +4,34 @@ defmodule McChunkTest do
   alias McChunk.Palette
 
   test "load chunk and check some blocks" do
-    bit_mask_in = 0b1111111 # 127
+    bit_mask_in = 0b1111111 # 7 sections
     bin_in = File.read! "chunks/chunks/chunk_-10_5_1457918629636.dump"
     chunk = Chunk.decode(-10, 5, bit_mask_in, true, bin_in)
 
-    IO.inspect Enum.map chunk.sections, &to_string(&1)
-
-    filled_sections = for section <- chunk.sections |> Enum.filter(&(&1)) do
+    assert 7 == length(for section <- chunk.sections |> Enum.filter(&(&1)) do
       [0 | _] = section.palette
       section.y
-    end
-    IO.inspect Enum.map filled_sections, &to_string(&1)
+    end)
+
+    expected_biome = Stream.cycle([6]) |> Enum.take(256) |> List.to_string
+    assert chunk.biome_data == expected_biome
 
     # TODO check some blocks
 
-    {bin_out, bit_mask_out} = Chunk.encode(%Chunk{})
-    # assert bit_mask_in == bit_mask_out
-    # assert bin_in == bin_out
+    {bin_out, bit_mask_out} = Chunk.encode(chunk)
+    assert bit_mask_in == bit_mask_out
+    assert bin_in == bin_out
   end
 
   test "chunk decoding" do
     %Chunk{} = Chunk.decode(-1, -1, 0, false, "")
     %Chunk{} = Chunk.decode(-1, -1, 0, true, <<0::2048>>)
-    # TODO
+    # TODO data, into, partial, no sky light
   end
 
   test "chunk encoding" do
     {<<0::2048>>, 0} = Chunk.encode(%Chunk{})
-    # TODO
+    # TODO data, into, partial, no sky light
   end
 
   test "palette decoding" do
