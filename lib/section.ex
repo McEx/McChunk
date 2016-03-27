@@ -89,7 +89,7 @@ defmodule McChunk.Section do
     end
 
     block = if uses_palette do
-      Enum.find_index(section.palette, &(&1 == block))
+      Palette.lookup(section.palette, block)
       # TODO if new block, grow palette and block_array
     else
       block
