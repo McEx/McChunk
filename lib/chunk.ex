@@ -55,7 +55,7 @@ defmodule McChunk.Chunk do
   end
 
   defp mod(x, y) when x > 0, do: rem(x, y)
-  defp mod(x, y) when x < 0, do: y + rem(x, y)
+  defp mod(x, y) when x < 0, do: rem(y + rem(x, y), y)
   defp mod(0, y), do: 0
 
   def idmeta_to_data({id, meta}), do: (id <<< 4) ||| meta

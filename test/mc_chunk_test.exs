@@ -59,6 +59,20 @@ defmodule McChunkTest do
     # TODO cap at 13, like vanilla does
   end
 
+  test "Chunk.pos_to_index" do
+    for pos <- [{0, -1, 0}, {0, -999, 0}, {0, 256, 0}, {0, 999, 0}] do
+      assert_raise FunctionClauseError, fn ->
+        Chunk.pos_to_index(pos)
+      end
+    end
+    for pos <- [{0, 0, 0}, {0, 16, 64}, {-16, 64, -32}] do
+      assert 0 == Chunk.pos_to_index(pos)
+    end
+    for pos <- [{15, 31, 63}, {-1, 255, -65}] do
+      assert 4095 == Chunk.pos_to_index(pos)
+    end
+  end
+
   test "Chunk.get/set_block" do
     # TODO
   end
