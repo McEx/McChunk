@@ -4,6 +4,8 @@ defmodule McChunkTest do
   alias McChunk.Section
   alias McChunk.Palette
 
+  @varint300 0b10101100_00000010
+
   test "chunk decoding" do
     %Chunk{} = Chunk.decode(-1, -1, 0, false, "")
     %Chunk{} = Chunk.decode(-1, -1, 0, true, <<0::2048>>)
@@ -11,7 +13,7 @@ defmodule McChunkTest do
   end
 
   test "chunk encoding" do
-    {<<0::2048>>, 0} = Chunk.encode(%Chunk{})
+    assert {<<0::2048>>, 0} == Chunk.encode(%Chunk{})
     # TODO data, into, partial, no sky light
   end
 
@@ -21,51 +23,49 @@ defmodule McChunkTest do
   end
 
   test "section encoding" do
-    <<1, 1, 0, 64, 0::4096*9>> = Section.encode(%Section{})
+    assert <<1, 1, 0, 64, 0::4096*9>> == Section.encode(%Section{})
     # TODO data, global palette, no sky light
   end
 
   test "palette decoding" do
-    {[1, 2, 3], ""} = Palette.decode(<<3, 1, 2, 3>>)
-
-    # length value larger than one byte
-    {palette, ""} = Palette.decode(<<0b10101100_00000010::16, 0::300*8>>)
-    assert length(palette) == 300
-    assert Enum.all? Enum.map palette, &(&1 == 0)
-
-    # large entry
-    {[0, 300, 0], ""} = Palette.decode(<<3, 0, 0b10101100_00000010::16, 0>>)
+    assert {[1, 2, 3], ""} == Palette.decode(<<3, 1, 2, 3>>)
+    assert {repeat([0], 300), ""} == Palette.decode(<<@varint300::16, 0::300*8>>)
+    assert {[0, 300, 0], ""} == Palette.decode(<<3, 0, @varint300::16, 0>>)
   end
 
   test "palette encoding" do
-    "" = Palette.encode([])
-    <<2, 123, 32>> = Palette.encode([123, 32])
-    <<0b10101100_00000010::16, 0::300*8>> = Palette.encode(repeat([0], 300))
-    <<3, 1, 0b10101100_00000010::16, 0>> = Palette.encode([1, 300, 0])
+    assert "" == Palette.encode([])
+    assert <<2, 123, 32>> == Palette.encode([123, 32])
+    assert <<@varint300::16, 0::300*8>> == Palette.encode(repeat([0], 300))
+    assert <<3, 1, @varint300::16, 0>> == Palette.encode([1, 300, 0])
   end
 
   test "calculate block bits for palette" do
-    1 = Palette.block_bits []
-    1 = Palette.block_bits [1]
-    1 = Palette.block_bits [1,2]
+    assert 1 == Palette.block_bits []
+    assert 1 == Palette.block_bits [1]
+    assert 1 == Palette.block_bits [1,2]
 
-    2 = Palette.block_bits Enum.to_list 1..3
-    2 = Palette.block_bits Enum.to_list 1..4
+    assert 2 == Palette.block_bits Enum.to_list 1..3
+    assert 2 == Palette.block_bits Enum.to_list 1..4
 
-    3 = Palette.block_bits Enum.to_list 1..5
-    3 = Palette.block_bits Enum.to_list 1..8
+    assert 3 == Palette.block_bits Enum.to_list 1..5
+    assert 3 == Palette.block_bits Enum.to_list 1..8
 
-    4 = Palette.block_bits Enum.to_list 1..9
-    4 = Palette.block_bits Enum.to_list 1..16
+    assert 4 == Palette.block_bits Enum.to_list 1..9
+    assert 4 == Palette.block_bits Enum.to_list 1..16
 
-    5 = Palette.block_bits Enum.to_list 1..17
+    assert 5 == Palette.block_bits Enum.to_list 1..17
 
     # TODO cap at 13, like vanilla does
   end
 
-  test "get/set block" do
+  test "Chunk.get/set_block" do
+    # TODO
+  end
+
+  test "Section.get/set_block" do
     s = %Section{palette: [42, 123]}
-    # all kinds of coordinates
+    # different kinds of coordinates
     for pos <- [{0, 0, 0}, {15, 255, -9999}] do
       index = Chunk.pos_to_index(pos)
       assert 42 == Section.get_block(s, index)
@@ -76,7 +76,9 @@ defmodule McChunkTest do
     end
     assert s.palette == [42, 123]
 
-    # TODO grow palette and block_array, update block_data
+    # TODO grow palette and block_array
+
+    # TODO update block_data
   end
 
   test "load chunk -10,5 and check some blocks" do
@@ -87,13 +89,12 @@ defmodule McChunkTest do
 
     # IO.inspect to_char_list(chunk.biome_data) |> Enum.filter(&(&1 != 6))
 
-    expected_biome = repeat([6], 256) |> List.to_string
-    assert chunk.biome_data == expected_biome
+    assert chunk.biome_data == repeat([6], 256) |> List.to_string
 
     assert Enum.at(chunk.sections, 6).palette == [0, 16, 32, 64, 256, 1523, 1524, 1525, 1526]
 
-    expected = [repeat([16, 32, 64, 256], 16), repeat([16], 16), repeat([32], 16), repeat([64], 16), repeat([256], 16), repeat([0], 16)]
-    assert expected == for z <- 0..5, do: for x <- 0..15, do: Chunk.get_block(chunk, {x, 6*16, z})
+    some_blocks = for z <- 0..5, do: for x <- 0..15, do: Chunk.get_block(chunk, {x, 6*16, z})
+    assert some_blocks == [repeat([16, 32, 64, 256], 16), repeat([16], 16), repeat([32], 16), repeat([64], 16), repeat([256], 16), repeat([0], 16)]
   end
 
   test "bulk chunk decode + encode" do
@@ -103,7 +104,7 @@ defmodule McChunkTest do
       |> Enum.map(&(chunks_dir <> &1))
 
     results = for chunk_path <- chunk_files do
-      chunk_filename = Regex.run(~r([^/]*$), chunk_path) |> Enum.at(0)
+      [chunk_filename] = Regex.run(~r([^/]*$), chunk_path)
       [_, x, z, _] = String.split(chunk_filename, "_")
       bit_mask_in = bit_mask_from_chunk_path(chunk_path)
 

@@ -3,7 +3,7 @@ defmodule McChunk.Section do
   import McChunk.Varint
   alias McChunk.Palette
 
-  defstruct y: 0, palette: [0], block_bits: 1,
+  defstruct y: -1, palette: [0], block_bits: 1,
             block_array: :array.new(64, default: 0),
             block_light: <<0::4096*4>>,
             sky_light: <<0::4096*4>>
