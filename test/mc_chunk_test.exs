@@ -78,21 +78,55 @@ defmodule McChunkTest do
   end
 
   test "Section.get/set_block" do
+    # single bit, two palette entries, non-zero first entry
     s = %Section{palette: [42, 123]}
-    # different kinds of coordinates
-    for pos <- [{0, 0, 0}, {15, 255, -9999}] do
+    s = Enum.reduce [{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
       index = Chunk.pos_to_index(pos)
       assert 42 == Section.get_block(s, index)
       s = Section.set_block(s, index, 123)
       assert 123 == Section.get_block(s, index)
       s = Section.set_block(s, index, 42)
       assert 42 == Section.get_block(s, index)
+      assert 1 == s.block_bits
+      assert s.palette == [42, 123]
+      s
     end
-    assert s.palette == [42, 123]
 
-    # TODO grow palette and block_array
+    # grow palette to 16 blocks
+    new_blocks = for b <- 1..14, do: 2*b
+    new_palette = s.palette ++ new_blocks
+    indices = Enum.to_list(0..32) ++ Enum.to_list(4090..4095)
 
-    # TODO update block_data
+    indices_x_blocks = for index <- indices, block <- new_blocks, do: {index, block}
+    s = Enum.reduce indices_x_blocks, s, fn {index, block}, s ->
+      s = Section.set_block(s, index, block)
+      assert s.block_bits > 1
+      assert block == Section.get_block(s, index)
+      s
+    end
+    assert 4 == s.block_bits
+    assert s.palette == new_palette
+
+    # persistence
+    blocks = Stream.cycle(s.palette) |> Enum.take(length indices)
+    s = Enum.reduce Enum.zip(indices, blocks), s, fn {index, block}, s ->
+      Section.set_block(s, index, block)
+    end
+    assert 4 == s.block_bits
+    assert s.palette == new_palette
+    for {index, block} <- Enum.zip(indices, blocks) do
+      assert block == Section.get_block(s, index)
+    end
+    assert 4 == s.block_bits
+    assert s.palette == new_palette
+
+    # one more block to require 5 bits
+    s = Section.set_block(s, 33, 43)
+    assert 43 == Section.get_block(s, 33)
+    assert 5 == s.block_bits
+
+    # TODO check that block_data changed
+    # TODO global palette
   end
 
   test "load chunk -10,5 and check some blocks" do
