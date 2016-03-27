@@ -40,7 +40,7 @@ defmodule McChunkTest do
   test "palette encoding" do
     "" = Palette.encode([])
     <<2, 123, 32>> = Palette.encode([123, 32])
-    <<0b10101100_00000010::16, 0::300*8>> = Palette.encode(Stream.cycle([0]) |> Enum.take(300))
+    <<0b10101100_00000010::16, 0::300*8>> = Palette.encode(repeat([0], 300))
     <<3, 1, 0b10101100_00000010::16, 0>> = Palette.encode([1, 300, 0])
   end
 
@@ -59,6 +59,8 @@ defmodule McChunkTest do
     4 = Palette.block_bits Enum.to_list 1..16
 
     5 = Palette.block_bits Enum.to_list 1..17
+
+    # TODO cap at 13, like vanilla does
   end
 
   test "bulk chunk decode + encode" do
@@ -70,13 +72,7 @@ defmodule McChunkTest do
     results = for chunk_path <- chunk_files do
       chunk_filename = Regex.run(~r([^/]*$), chunk_path) |> Enum.at(0)
       [_, x, z, _] = String.split(chunk_filename, "_")
-
-      json_str = chunk_path
-        |> String.replace("/chunk_", "/packet_")
-        |> String.replace(".dump", ".data")
-        |> File.read!
-      [_, bit_mask_str] = Regex.run(~r/"bitMap":([0-9]*)/, json_str)
-      bit_mask_in = String.to_integer(bit_mask_str)
+      bit_mask_in = bit_mask_from_chunk_path(chunk_path)
 
       bin_in = File.read!(chunk_path)
       chunk = Chunk.decode(x, z, bit_mask_in, true, bin_in)
@@ -92,5 +88,16 @@ defmodule McChunkTest do
     IO.puts "re-encoded #{length chunk_files} chunks, #{length failed_chunks} failures"
     assert length(failed_chunks) == 0
   end
+
+  defp bit_mask_from_chunk_path(chunk_path) do
+      json_str = chunk_path
+        |> String.replace("/chunk_", "/packet_")
+        |> String.replace(".dump", ".data")
+        |> File.read!
+      [_, bit_mask_str] = Regex.run(~r/"bitMap":([0-9]*)/, json_str)
+      String.to_integer(bit_mask_str)
+  end
+
+  defp repeat(vals, len), do: Stream.cycle(vals) |> Enum.take(len)
 
 end
