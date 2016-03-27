@@ -5,12 +5,11 @@ defmodule McChunk.Section do
 
   defstruct y: 0, palette: [0], block_bits: 1,
             block_array: :array.new(64, default: 0),
-            block_data: <<0::4096>>, # TODO use as cache?
             block_light: <<0::4096*4>>,
             sky_light: <<0::4096*4>>
 
   def decode(y, data) do
-    <<block_bits::8, data::binary>> = data
+    <<block_bits, data::binary>> = data
     {palette, data} = case block_bits do
       0 -> {[], data}
       _ -> Palette.decode(data)
@@ -19,17 +18,15 @@ defmodule McChunk.Section do
     {num_longs, data} = decode_varint(data)
     data_nbits = num_longs * 8
 
-    <<block_data::binary-size(data_nbits),
-      block_light::binary-size(2048),
-      data::binary>> = data
+    {block_array, data} = decode_block_data(num_longs, data)
+
+    <<block_light::binary-size(2048), data::binary>> = data
 
     # TODO no sky light in the nether
     <<sky_light::binary-size(2048), data::binary>> = data
 
-    {block_array, ""} = decode_block_data(num_longs, block_data)
-
-    {%__MODULE__{y: y, palette: palette, block_bits: block_bits,
-      block_array: block_array, block_data: block_data,
+    {%__MODULE__{y: y, palette: palette,
+      block_bits: block_bits, block_array: block_array,
       block_light: block_light, sky_light: sky_light}, data}
   end
 
@@ -42,9 +39,9 @@ defmodule McChunk.Section do
   end
 
   def encode(%__MODULE__{palette: palette, block_bits: block_bits,
-    block_array: block_array, block_data: block_data,
-    block_light: block_light, sky_light: sky_light}) do
-    # TODO update block_data if dirty
+    block_array: block_array, block_light: block_light, sky_light: sky_light}) do
+    block_data = for long_val <- :array.to_list(block_array),
+      into: "", do: <<long_val::big-integer-size(64)>>
     <<block_bits>>
     <> Palette.encode(palette)
     <> encode_varint(div(byte_size(block_data), 8))
