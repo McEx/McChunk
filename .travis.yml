@@ -1,0 +1,12 @@
+language: elixir
+
+notifications:
+  irc:
+    on_success: change
+    skip_join: true
+    channels:
+      - "irc.freenode.org#McEx"
+    template:
+      - "[%{repository_name}] %{branch}#%{build_number} %{message} %{build_url}"
+      - "[%{repository_name}] @%{author} %{commit} %{commit_message} %{compare_url}"
+

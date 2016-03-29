@@ -11,3 +11,5 @@ wget http://lunarco.de/minecraft/chunks/chunks-1.9.1-pre3-1.zip
 unzip chunks-1.9.1-pre3-1.zip
 ```
 Use `mix test` to compile and run the tests.
+
+[![Build Status](https://travis-ci.org/Gjum/chunk-ex.svg?branch=master)](https://travis-ci.org/Gjum/chunk-ex)
