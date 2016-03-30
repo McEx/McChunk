@@ -10,7 +10,8 @@ defmodule McChunk.Section do
             sky_light: <<0::4096*4>>
 
   def decode(y, data) do
-    <<block_bits, data::binary>> = data
+    <<block_bits::8, data::binary>> = data
+
     {palette, data} = case block_bits do
       0 -> {[], data}
       _ -> Palette.decode(data)
@@ -18,6 +19,7 @@ defmodule McChunk.Section do
 
     {num_longs, data} = decode_varint(data)
     {block_array, data} = decode_block_data(num_longs, data)
+
     <<block_light::binary-size(2048), data::binary>> = data
 
     # TODO no sky light in the nether
@@ -29,38 +31,36 @@ defmodule McChunk.Section do
   end
 
   defp decode_block_data(num_longs, data) do
-    Enum.reduce 0..num_longs-1, {:array.new(num_longs), data},
-    fn i, {block_array, data} ->
+    arr = :array.new(num_longs)
+    Enum.reduce(0..(num_longs - 1), {arr, data}, fn i, {arr, data} ->
       <<long_val::big-integer-size(64), data::binary>> = data
-      {:array.set(i, long_val, block_array), data}
-    end
+      {:array.set(i, long_val, arr), data}
+    end)
   end
 
-  def encode(%__MODULE__{palette: palette, block_bits: block_bits,
-    block_array: block_array, block_light: block_light, sky_light: sky_light}) do
-    block_data = for long_val <- :array.to_list(block_array),
-      into: "", do: <<long_val::big-integer-size(64)>>
-    <<block_bits>>
-    <> Palette.encode(palette)
-    <> encode_varint(div(byte_size(block_data), 8))
-    <> block_data
-    <> block_light
-    <> sky_light
+  def encode(section) do
+    block_longs = for long_val <- :array.to_list(section.block_array),
+      do: <<long_val::big-integer-size(64)>>
+    [section.block_bits,
+      Palette.encode(section.palette),
+      encode_varint(length block_longs),
+      block_longs,
+      section.block_light,
+      section.sky_light] # TODO no sky light in the nether
   end
 
-  def get_block(%__MODULE__{palette: palette, block_bits: bbits,
-    block_array: arr}, index) do
+  def get_block(section, index) do
+    %__MODULE__{palette: palette, block_bits: bbits, block_array: arr} = section
     {uses_palette, bbits} = case bbits do
       0 -> {false, 13}
       bb -> {true, bb}
     end
 
-    block = bitarray_get(arr, bbits, index)
-
+    block_key = bitarray_get(arr, bbits, index)
     if uses_palette do
-      Enum.at(palette, block)
+      Enum.at(palette, block_key)
     else
-      block # already global palette
+      block_key # already global palette
     end
   end
 
@@ -112,12 +112,10 @@ defmodule McChunk.Section do
     end
   end
 
-  defp lookup_or_grow(%__MODULE__{palette: [],
-    block_bits: 0, block_array: arr}, block) do
-    {[], 0, arr, block} # global palette
-  end
-  defp lookup_or_grow(%__MODULE__{palette: palette,
-    block_bits: bbits, block_array: arr}, block) do
+  defp lookup_or_grow(%__MODULE__{palette: [], block_bits: 0, block_array: arr}, block),
+    do: {[], 0, arr, block} # global palette
+  defp lookup_or_grow(section, block) do
+    %__MODULE__{palette: palette, block_bits: bbits, block_array: arr} = section
     case Palette.lookup(palette, block) do
       nil ->
         block_key = length palette
@@ -126,14 +124,14 @@ defmodule McChunk.Section do
 
         if bbits >= required_bbits do
           {new_palette, bbits, arr, block_key}
+
         else # palette requires more bits, grow block_array
           new_num_longs = trunc Float.ceil(4096 * required_bbits / 8 / 8)
-          # TODO custom bit shifting magic to add a 0 to every bitarray entry
-          new_arr = Enum.reduce 0..4095, :array.new(new_num_longs, default: 0),
-            fn index, arr ->
-              value = bitarray_get(arr, bbits, index)
-              bitarray_set(arr, bbits, index, value)
-            end
+          new_arr = :array.new(new_num_longs, default: 0)
+          new_arr = Enum.reduce(0..4095, new_arr, fn index, arr ->
+            value = bitarray_get(arr, bbits, index)
+            bitarray_set(arr, bbits, index, value)
+          end)
 
           {new_palette, required_bbits, new_arr, block_key}
         end
@@ -146,7 +144,6 @@ end
 
 defimpl String.Chars, for: McChunk.Section do
   def to_string(nil), do: "#Section<empty>"
-  def to_string(%McChunk.Section{y: y, block_bits: block_bits, palette: palette}) do
-    "#Section<y=#{y}, #{block_bits} bits, palette=#{inspect palette}>"
-  end
+  def to_string(%McChunk.Section{y: y, block_bits: block_bits, palette: palette}),
+    do: "#Section<y=#{y}, #{block_bits} bits, palette=#{inspect palette}>"
 end

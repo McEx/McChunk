@@ -4,7 +4,7 @@ defmodule McChunkTest do
   alias McChunk.Section
   alias McChunk.Palette
 
-  @varint300 0b10101100_00000010
+  @varint300 0b1_0101100_0_0000010
 
   test "chunk decoding" do
     %Chunk{} = Chunk.decode(-1, -1, 0, false, "")
@@ -13,7 +13,9 @@ defmodule McChunkTest do
   end
 
   test "chunk encoding" do
-    assert {<<0::2048>>, 0} == Chunk.encode(%Chunk{})
+    {iodata, bit_mask} = Chunk.encode(%Chunk{})
+    assert 0 == bit_mask
+    assert <<0::2048>> == IO.iodata_to_binary iodata
     # TODO data, into, partial, no sky light
   end
 
@@ -23,7 +25,7 @@ defmodule McChunkTest do
   end
 
   test "section encoding" do
-    assert <<1, 1, 0, 64, 0::4096*9>> == Section.encode(%Section{})
+    assert <<1, 1, 0, 64, 0::4096*9>> == IO.iodata_to_binary Section.encode(%Section{})
     # TODO data, global palette, no sky light
   end
 
@@ -34,10 +36,10 @@ defmodule McChunkTest do
   end
 
   test "palette encoding" do
-    assert "" == Palette.encode([])
-    assert <<2, 123, 32>> == Palette.encode([123, 32])
-    assert <<@varint300::16, 0::300*8>> == Palette.encode(repeat([0], 300))
-    assert <<3, 1, @varint300::16, 0>> == Palette.encode([1, 300, 0])
+    assert "" == IO.iodata_to_binary Palette.encode([])
+    assert <<2, 123, 32>> == IO.iodata_to_binary Palette.encode([123, 32])
+    assert <<@varint300::16, 0::300*8>> == IO.iodata_to_binary Palette.encode(repeat([0], 300))
+    assert <<3, 1, @varint300::16, 0>> == IO.iodata_to_binary Palette.encode([1, 300, 0])
   end
 
   test "calculate block bits for palette" do
@@ -80,7 +82,7 @@ defmodule McChunkTest do
   test "Section.get/set_block" do
     # single bit, two palette entries, non-zero first entry
     s = %Section{palette: [42, 123]}
-    s = Enum.reduce [{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
+    s = Enum.reduce([{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
       index = Chunk.pos_to_index(pos)
       assert 42 == Section.get_block(s, index)
       s = Section.set_block(s, index, 123)
@@ -90,7 +92,7 @@ defmodule McChunkTest do
       assert 1 == s.block_bits
       assert s.palette == [42, 123]
       s
-    end
+    end)
 
     # grow palette to 16 blocks
     new_blocks = for b <- 1..14, do: 2*b
@@ -108,7 +110,7 @@ defmodule McChunkTest do
     assert s.palette == new_palette
 
     # persistence
-    blocks = Stream.cycle(s.palette) |> Enum.take(length indices)
+    blocks = repeat(s.palette, length indices)
     s = Enum.reduce Enum.zip(indices, blocks), s, fn {index, block}, s ->
       Section.set_block(s, index, block)
     end
@@ -135,9 +137,7 @@ defmodule McChunkTest do
 
     assert 7 == length Enum.filter chunk.sections, &(&1)
 
-    # IO.inspect to_char_list(chunk.biome_data) |> Enum.filter(&(&1 != 6))
-
-    assert chunk.biome_data == repeat([6], 256) |> List.to_string
+    assert chunk.biome_data == [6] |> repeat(256) |> List.to_string
 
     assert Enum.at(chunk.sections, 6).palette == [0, 16, 32, 64, 256, 1523, 1524, 1525, 1526]
 
@@ -165,9 +165,11 @@ defmodule McChunkTest do
       chunk = Chunk.decode(x, z, bit_mask_in, true, bin_in)
       {bin_out, bit_mask_out} = Chunk.encode(chunk)
 
-      if bit_mask_in != bit_mask_out or bin_in != bin_out do
-        IO.puts "different: #{chunk_filename} sections: #{length(Enum.filter chunk.sections, &(&1))}"
-        for section <- chunk.sections |> Enum.filter(&(&1)), do: IO.puts "  #{section}"
+      if bit_mask_in != bit_mask_out or bin_in != IO.iodata_to_binary(bin_out) do
+        n_diff_sections = chunk.sections |> Enum.filter(&(&1)) |> length
+        IO.puts "different: #{chunk_filename} sections: #{n_diff_sections}"
+        for section <- chunk.sections |> Enum.filter(&(&1)),
+          do: IO.puts "  #{section}"
         chunk_filename
       end
     end
@@ -177,7 +179,8 @@ defmodule McChunkTest do
   end
 
   defp bit_mask_from_chunk_path(chunk_path) do
-      json_str = chunk_path
+      json_str =
+        chunk_path
         |> String.replace("/chunk_", "/packet_")
         |> String.replace(".dump", ".data")
         |> File.read!
@@ -185,6 +188,6 @@ defmodule McChunkTest do
       String.to_integer(bit_mask_str)
   end
 
-  defp repeat(vals, len), do: Stream.cycle(vals) |> Enum.take(len)
+  defp repeat(vals, len), do: vals |> Stream.cycle |> Enum.take(len)
 
 end
