@@ -2,12 +2,15 @@ language: elixir
 elixir:
   - 1.2.3
 
+before_script:
+  - "wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip"
+
 notifications:
   irc:
     on_success: change
-    skip_join: false
+    skip_join: true
     channels:
       - "irc.freenode.org#McEx"
     template:
-      - "[%{repository_name}] %{branch}#%{build_number} %{message} %{build_url}"
-      - "[%{repository_name}] @%{author} %{commit} %{commit_message} %{compare_url}"
+      - "[%{repository_name}] %{message} #%{build_number} %{build_url}"
+      - "[%{repository_name}] %{commit_message} (%{author} on %{branch} %{commit}) %{compare_url}"

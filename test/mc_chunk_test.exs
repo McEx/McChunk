@@ -130,7 +130,7 @@ defmodule McChunkTest do
   end
 
   test "load chunk -10,5 and check some blocks" do
-    path = "chunks/chunks/chunk_-10_5_1457918629636.dump"
+    path = "test_chunks/chunk_-10_5_1457918629636.dump"
     chunk = Chunk.decode(-10, 5, 0b1111111, true, File.read! path)
 
     assert 7 == length Enum.filter chunk.sections, &(&1)
@@ -143,11 +143,16 @@ defmodule McChunkTest do
 
     some_blocks = for z <- 0..5, do: for x <- 0..15, do: Chunk.get_block(chunk, {x, 6*16, z})
     assert some_blocks == [repeat([16, 32, 64, 256], 16), repeat([16], 16), repeat([32], 16), repeat([64], 16), repeat([256], 16), repeat([0], 16)]
+
+    some_blocks = for y <- 0..5, do: Chunk.get_block(chunk, {0, 6*16+y, 0})
+    assert some_blocks == [16, 1523, 1524, 1525, 1526, 0]
   end
 
   test "bulk chunk decode + encode" do
-    chunks_dir = "chunks/chunks-1.9.1-pre3-1/"
-    chunk_files = File.ls!(chunks_dir)
+    chunks_dir = "test_chunks/"
+    chunk_files =
+      chunks_dir
+      |> File.ls!
       |> Enum.filter(&(String.ends_with?(&1, "dump")))
       |> Enum.map(&(chunks_dir <> &1))
 
