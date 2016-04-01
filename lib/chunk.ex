@@ -2,7 +2,11 @@ defmodule McChunk.Chunk do
   use Bitwise
   alias McChunk.Section
 
-  defstruct x: 0, z: 0, biome_data: <<0::2048>>, sections: for _ <- 0..15, do: nil
+  defstruct x: 0, z: 0,
+            biome_data: <<0::2048>>,
+            sections: for _ <- 0..15, do: nil
+
+  ##### de-/serialization
 
   def decode(x, z, bit_mask, has_biome_data, data, into \\ %__MODULE__{}) do
     {sections, data} =
@@ -10,17 +14,17 @@ defmodule McChunk.Chunk do
       |> Enum.with_index
       |> Enum.reduce({[], data}, fn {old_section, y}, {sections, data} ->
         case ((bit_mask >>> y) &&& 1) do
+          0 -> {[old_section | sections], data}
           1 ->
             {section, data} = Section.decode(y, data)
             {[section | sections], data}
-
-          0 -> {[old_section | sections], data}
         end
       end)
     sections = Enum.reverse sections
 
-    <<biome_data::bitstring-size(2048)>> = if has_biome_data do
-      <<_::2048>> = data
+    biome_data = if has_biome_data do
+      if byte_size(data) != 256, do: raise "wrong biome data size: #{byte_size(data)}"
+      data
     else
       into.biome_data
     end
@@ -43,6 +47,20 @@ defmodule McChunk.Chunk do
     {[data, biome_data], bit_mask}
   end
 
+  ##### interaction
+
+  def get_biome(chunk, {x, z}) do
+    start = mod(x, 16) + 16 * mod(z, 16)
+    binary_part(chunk.biome_data, start, 1)
+  end
+
+  def set_biome(chunk, {x, z}, biome) do
+    raise "Not implemented. Please manually update the whole 256-byte binary for now."
+    # TODO
+    biome_data = chunk.biome_data
+    %__MODULE__{chunk | biome_data: biome_data}
+  end
+
   def get_block(_, {_, y, _}) when y < 0 or y >= 256, do: 0
   def get_block(chunk, {x, y, z}) do
     case Enum.at(chunk.sections, div(y, 16)) do
@@ -55,6 +73,8 @@ defmodule McChunk.Chunk do
     %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(y, 4),
       &Section.set_block(&1 || %Section{}, pos_to_index({x, y, z}), block))}
   end
+
+  ##### helpers
 
   def pos_to_index({x, y, z}) when y >= 0 and y < 256 do
     mod(x, 16) + 16 * mod(z, 16) + 256 * mod(y, 16)
