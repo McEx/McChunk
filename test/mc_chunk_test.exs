@@ -3,6 +3,7 @@ defmodule McChunkTest do
   alias McChunk.Chunk
   alias McChunk.Section
   alias McChunk.Palette
+  alias McChunk.Nibbles
 
   @varint300 0b1_0101100_0_0000010
 
@@ -87,7 +88,18 @@ defmodule McChunkTest do
     # TODO
   end
 
-  test "Chunk.get/set_block_light" do
+  test "Nibbles" do
+    {arr, ""} = Nibbles.decode(<<0x21, 0xfe>>, 4)
+    assert [1, 2, 0xe, 0xf] == for i <- 0..3, do: Nibbles.get(arr, i)
+    arr = Nibbles.set(arr, 0, 3)
+    arr = Nibbles.set(arr, 1, 4)
+    arr = Nibbles.set(arr, 2, 5)
+    arr = Nibbles.set(arr, 3, 6)
+    assert [3, 4, 5, 6] == for i <- 0..3, do: Nibbles.get(arr, i)
+    assert <<0x43, 0x65>> == IO.iodata_to_binary(Nibbles.encode(arr))
+  end
+
+  test "Chunk.(get|set)_(block|sky)_light" do
     c = %Chunk{}
     positions = [{0,0,0}, {15,15,15}, {0,16,0}, {15,16,15}, {15,255,15}]
     bls = repeat([15, 0, 12, 3], length positions)

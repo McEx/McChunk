@@ -27,16 +27,16 @@ defmodule McChunk.Nibbles do
   def get(arr, index) do
     val = :array.get(div(index, 2), arr)
     case rem(index, 2) do
-      0 -> (val >>> 4) &&& 0xf
-      1 -> val &&& 0xf
+      0 -> val &&& 0xf
+      1 -> (val >>> 4) &&& 0xf
     end
   end
 
   def set(arr, index, val) do
     old = :array.get(div(index, 2), arr)
     entry = case rem(index, 2) do
-      0 -> (val <<< 4) ||| (0x0f &&& old)
-      1 -> val ||| (0xf0 &&& old)
+      0 -> val ||| (0xf0 &&& old)
+      1 -> (val <<< 4) ||| (0x0f &&& old)
     end
     :array.set(div(index, 2), entry, arr)
   end
