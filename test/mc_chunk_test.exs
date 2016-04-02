@@ -87,6 +87,22 @@ defmodule McChunkTest do
     # TODO
   end
 
+  test "Chunk.get/set_block_light" do
+    c = %Chunk{}
+    positions = [{0,0,0}, {15,15,15}, {0,16,0}, {15,16,15}, {15,255,15}]
+    bls = repeat([15, 0, 12, 3], length positions)
+    sls = repeat([12, 0, 3, 15], length positions)
+    combined = Enum.zip(positions, Enum.zip(bls, sls))
+    c = Enum.reduce(combined, c, fn {pos, {bl, sl}}, c ->
+      c = Chunk.set_block_light(c, pos, bl)
+      Chunk.set_sky_light(c, pos, sl)
+    end)
+    for {pos, {bl, sl}} <- combined do
+      assert bl == Chunk.get_block_light(c, pos)
+      assert sl == Chunk.get_sky_light(c, pos)
+    end
+  end
+
   test "Section.get/set_block" do
     # single bit, two palette entries, non-zero first entry
     s = %Section{palette: [42, 123]}
@@ -108,20 +124,20 @@ defmodule McChunkTest do
     indices = Enum.to_list(0..32) ++ Enum.to_list(4090..4095)
 
     indices_x_blocks = for index <- indices, block <- new_blocks, do: {index, block}
-    s = Enum.reduce indices_x_blocks, s, fn {index, block}, s ->
+    s = Enum.reduce(indices_x_blocks, s, fn {index, block}, s ->
       s = Section.set_block(s, index, block)
       assert s.block_bits > 1
       assert block == Section.get_block(s, index)
       s
-    end
+    end)
     assert 4 == s.block_bits
     assert s.palette == new_palette
 
     # persistence
     blocks = repeat(s.palette, length indices)
-    s = Enum.reduce Enum.zip(indices, blocks), s, fn {index, block}, s ->
+    s = Enum.reduce(Enum.zip(indices, blocks), s, fn {index, block}, s ->
       Section.set_block(s, index, block)
-    end
+    end)
     assert 4 == s.block_bits
     assert s.palette == new_palette
     for {index, block} <- Enum.zip(indices, blocks) do

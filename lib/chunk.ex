@@ -1,6 +1,7 @@
 defmodule McChunk.Chunk do
   use Bitwise
   alias McChunk.Section
+  alias McChunk.Nibbles
 
   defstruct x: 0, z: 0,
             biome_data: <<0::2048>>,
@@ -61,17 +62,45 @@ defmodule McChunk.Chunk do
     %__MODULE__{chunk | biome_data: biome_data}
   end
 
-  def get_block(_, {_, y, _}) when y < 0 or y >= 256, do: 0
-  def get_block(chunk, {x, y, z}) do
+  def get_block(chunk, pos) do
+    access_section(chunk, pos, &Section.get_block/2)
+  end
+
+  def set_block(chunk, pos, block) do
+    update_section(chunk, pos, &Section.set_block(&1, &2, block))
+  end
+
+  def get_block_light(chunk, pos) do
+    access_section(chunk, pos, &Nibbles.get(&1.block_light, &2))
+  end
+
+  def set_block_light(chunk, pos, light) do
+    update_section(chunk, pos, fn section, index ->
+      %Section{section | block_light: Nibbles.set(section.block_light, index, light)}
+    end)
+  end
+
+  def get_sky_light(chunk, pos) do
+    access_section(chunk, pos, &Nibbles.get(&1.sky_light, &2))
+  end
+
+  def set_sky_light(chunk, pos, light) do
+    update_section(chunk, pos, fn section, index ->
+      %Section{section | sky_light: Nibbles.set(section.sky_light, index, light)}
+    end)
+  end
+
+  defp access_section(_, {_, y, _}, _) when y < 0 or y >= 256, do: 0
+  defp access_section(chunk, {x, y, z}, func) do
     case Enum.at(chunk.sections, div(y, 16)) do
       nil -> 0 # chunk is loaded, section is empty
-      section -> Section.get_block(section, pos_to_index({x, y, z}))
+      section -> func.(section, pos_to_index({x, y, z}))
     end
   end
 
-  def set_block(chunk, {x, y, z}, block) when y >= 0 and y < 256 do
-    %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(y, 4),
-      &Section.set_block(&1 || %Section{}, pos_to_index({x, y, z}), block))}
+  defp update_section(chunk, {x, y, z}, func) when y >= 0 and y < 256 do
+    %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(y, 16),
+      &func.(&1 || %Section{y: div(y, 16)}, pos_to_index({x, y, z})))}
   end
 
   ##### helpers
