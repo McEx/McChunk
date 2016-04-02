@@ -2,8 +2,12 @@ language: elixir
 elixir:
   - 1.2.3
 
+cache:
+  directories:
+  - test_chunks
+
 before_script:
-  - "wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip"
+  - "[ -d test_chunks ] || (wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip)"
 
 notifications:
   irc:
