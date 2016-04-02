@@ -3,13 +3,13 @@ defmodule McChunk.Palette do
 
   def decode(data) do
     {palette_len, data} = decode_varint(data)
-    decode(palette_len, data)
+    decode(data, palette_len)
   end
 
-  defp decode(0, data), do: {[], data}
-  defp decode(n, data) do
+  defp decode(data, 0), do: {[], data}
+  defp decode(data, n) do
     {val, data} = decode_varint(data)
-    {vals, data} = decode(n - 1, data)
+    {vals, data} = decode(data, n - 1)
     {[val | vals], data}
   end
 

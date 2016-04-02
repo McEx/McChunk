@@ -8,7 +8,7 @@ defmodule McChunk.Chunk do
 
   ##### de-/serialization
 
-  def decode(x, z, bit_mask, has_biome_data, data, into \\ %__MODULE__{}) do
+  def decode(data, x, z, bit_mask, has_biome_data, into \\ %__MODULE__{}) do
     {sections, data} =
       into.sections
       |> Enum.with_index
@@ -16,7 +16,7 @@ defmodule McChunk.Chunk do
         case ((bit_mask >>> y) &&& 1) do
           0 -> {[old_section | sections], data}
           1 ->
-            {section, data} = Section.decode(y, data)
+            {section, data} = Section.decode(data, y)
             {[section | sections], data}
         end
       end)

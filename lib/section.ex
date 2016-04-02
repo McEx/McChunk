@@ -2,14 +2,15 @@ defmodule McChunk.Section do
   use Bitwise
   import McChunk.Varint
   alias McChunk.Palette
+  alias McChunk.Nibbles
 
   # count block usages for empty chunk deletion, reuse unused palette entries?
   defstruct y: -1, palette: [0], block_bits: 1,
             block_array: :array.new(64, default: 0),
-            block_light: <<0::4096*4>>,
-            sky_light: <<0::4096*4>>
+            block_light: Nibbles.new(4096),
+            sky_light: Nibbles.new(4096)
 
-  def decode(y, data) do
+  def decode(data, y, has_sky \\ true) do
     <<block_bits::8, data::binary>> = data
 
     {palette, data} = case block_bits do
@@ -18,19 +19,22 @@ defmodule McChunk.Section do
     end
 
     {num_longs, data} = decode_varint(data)
-    {block_array, data} = decode_block_data(num_longs, data)
+    {block_array, data} = decode_block_data(data, num_longs)
 
-    <<block_light::binary-size(2048), data::binary>> = data
+    {block_light, data} = Nibbles.decode(data, 4096)
 
-    # TODO no sky light in the nether
-    <<sky_light::binary-size(2048), data::binary>> = data
+    {sky_light, data} = if has_sky do
+      Nibbles.decode(data, 4096)
+    else
+      {nil, data}
+    end
 
     {%__MODULE__{y: y, palette: palette,
       block_bits: block_bits, block_array: block_array,
       block_light: block_light, sky_light: sky_light}, data}
   end
 
-  defp decode_block_data(num_longs, data) do
+  defp decode_block_data(data, num_longs) do
     arr = :array.new(num_longs)
     Enum.reduce(0..(num_longs - 1), {arr, data}, fn i, {arr, data} ->
       <<long_val::big-integer-size(64), data::binary>> = data
@@ -38,15 +42,18 @@ defmodule McChunk.Section do
     end)
   end
 
-  def encode(section) do
+  def encode(section, has_sky \\ true) do
     block_longs = for long_val <- :array.to_list(section.block_array),
       do: <<long_val::big-integer-size(64)>>
-    [section.block_bits,
+    sky_light = if has_sky, do: Nibbles.encode(section.sky_light), else: []
+    [
+      section.block_bits,
       Palette.encode(section.palette),
       encode_varint(length block_longs),
       block_longs,
-      section.block_light,
-      section.sky_light] # TODO no sky light in the nether
+      Nibbles.encode(section.block_light)
+      | sky_light
+    ]
   end
 
   def get_block(section, index) do

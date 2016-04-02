@@ -1,5 +1,5 @@
 defmodule McChunkTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias McChunk.Chunk
   alias McChunk.Section
   alias McChunk.Palette
@@ -7,8 +7,8 @@ defmodule McChunkTest do
   @varint300 0b1_0101100_0_0000010
 
   test "chunk decoding" do
-    %Chunk{} = Chunk.decode(-1, -1, 0, false, "")
-    %Chunk{} = Chunk.decode(-1, -1, 0, true, <<0::2048>>)
+    assert %Chunk{} == Chunk.decode("", 0, 0, 0, false)
+    assert %Chunk{} == Chunk.decode(<<0::2048>>, 0, 0, 0, true)
     # TODO data, into, partial, no sky light
   end
 
@@ -20,7 +20,15 @@ defmodule McChunkTest do
   end
 
   test "section decoding" do
-    {%Section{}, ""} = Section.decode(-1, <<1, 1, 0, 64, 0::4096*9>>)
+    {s, rest} = Section.decode(<<1, 1, 0, 64, 0::4096*9>>, -1)
+    assert rest == ""
+    # unfilled, default-0 array looks different than filled, compare entries
+    for i <- 0..63, do: assert 0 == :array.get(i, s.block_array)
+    for i <- 0..2047, do: assert 0 == :array.get(i, s.block_light)
+    for i <- 0..2047, do: assert 0 == :array.get(i, s.sky_light)
+    assert s.palette == [0]
+    assert s.block_bits == 1
+    assert s.y == -1
     # TODO data, global palette, no sky light
   end
 
@@ -133,7 +141,7 @@ defmodule McChunkTest do
 
   test "load chunk -10,5 and check some blocks" do
     path = "test_chunks/chunk_-10_5_1457918629636.dump"
-    chunk = Chunk.decode(-10, 5, 0b1111111, true, File.read! path)
+    chunk = Chunk.decode(File.read!(path), -10, 5, 0b1111111, true)
 
     assert 7 == length Enum.filter chunk.sections, &(&1)
 
@@ -162,7 +170,7 @@ defmodule McChunkTest do
       bit_mask_in = bit_mask_from_chunk_path(chunk_path)
 
       bin_in = File.read!(chunk_path)
-      chunk = Chunk.decode(x, z, bit_mask_in, true, bin_in)
+      chunk = Chunk.decode(bin_in, x, z, bit_mask_in, true)
       {bin_out, bit_mask_out} = Chunk.encode(chunk)
 
       if bit_mask_in != bit_mask_out or bin_in != IO.iodata_to_binary(bin_out) do
