@@ -1,2 +1,3 @@
-%{"bunt": {:hex, :bunt, "0.1.5"},
+%{"benchfella": {:hex, :benchfella, "0.3.2"},
+  "bunt": {:hex, :bunt, "0.1.5"},
   "credo": {:hex, :credo, "0.3.10"}}

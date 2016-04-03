@@ -20,8 +20,13 @@ defmodule McChunkTest do
     # TODO data, into, partial, no sky light
   end
 
+  @small_section_binary <<1, 1, 0, 64, 0::4096*9>>
+  @large_section_binary <<8, 64, 0::512, 128, 4, 0::4096*8, 0::4096*8>>
+  @large_section %Section{block_bits: 8, palette: (for _ <- 0..63, do: 0),
+                          block_array: :array.new(64*8, default: 0)}
+
   test "section decoding" do
-    {s, rest} = Section.decode(<<1, 1, 0, 64, 0::4096*9>>, -1)
+    {s, rest} = Section.decode(@small_section_binary, -1)
     assert rest == ""
     # unfilled, default-0 array looks different than filled, compare entries
     for i <- 0..63, do: assert 0 == :array.get(i, s.block_array)
@@ -30,11 +35,22 @@ defmodule McChunkTest do
     assert s.palette == [0]
     assert s.block_bits == 1
     assert s.y == -1
+
+    {s, rest} = Section.decode(@large_section_binary, -1)
+    assert rest == ""
+    for i <- 0..(64*8-1), do: assert 0 == :array.get(i, s.block_array)
+    for i <- 0..2047, do: assert 0 == :array.get(i, s.block_light)
+    for i <- 0..2047, do: assert 0 == :array.get(i, s.sky_light)
+    assert s.palette == for _ <- 0..63, do: 0
+    assert s.block_bits == 8
+    assert s.y == -1
+
     # TODO data, global palette, no sky light
   end
 
   test "section encoding" do
-    assert <<1, 1, 0, 64, 0::4096*9>> == IO.iodata_to_binary Section.encode(%Section{})
+    assert @small_section_binary == IO.iodata_to_binary Section.encode(%Section{})
+    assert @large_section_binary == IO.iodata_to_binary Section.encode(@large_section)
     # TODO data, global palette, no sky light
   end
 

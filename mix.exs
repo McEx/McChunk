@@ -16,6 +16,7 @@ defmodule McChunk.Mixfile do
 
   defp deps do
     [
+      {:benchfella, "~> 0.3.0", only: [:dev]},
       {:credo, "~> 0.3", only: [:dev]},
     ]
   end

@@ -17,6 +17,9 @@ before_script:
 script:
 - "mix test"
 
+after_success:
+- "mix bench -o ''"
+
 after_script:
 - "mix credo"
 

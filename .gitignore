@@ -4,3 +4,6 @@
 erl_crash.dump
 *.ez
 /rel
+/test_chunks
+/bench/snapshots/
+/bench/graphs/
