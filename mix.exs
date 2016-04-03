@@ -14,7 +14,10 @@ defmodule McChunk.Mixfile do
     [applications: [:logger]]
   end
 
-  def deps do [
-  ] end
+  defp deps do
+    [
+      {:credo, "~> 0.3", only: [:dev]},
+    ]
+  end
 
 end

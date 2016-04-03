@@ -9,6 +9,12 @@ cache:
 before_script:
   - "[ -f test_chunks/chunk_-10_5_1457918629636.dump ] || (wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip)"
 
+script:
+- "mix test"
+
+after_script:
+- "mix credo"
+
 notifications:
   irc:
     on_success: change
@@ -16,5 +22,5 @@ notifications:
     channels:
       - "irc.freenode.org#McEx"
     template:
-      - "[%{repository_name}] %{message} #%{build_number} %{build_url}"
-      - "[%{repository_name}] %{commit_message} (%{author} on %{branch} %{commit}) %{compare_url}"
+      - "[%{repository_name} %{branch}] %{message} #%{build_number} %{build_url}"
+      - "[%{repository_name} %{branch}] %{commit_message} (%{commit} by %{author}) %{compare_url}"
