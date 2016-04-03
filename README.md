@@ -1,5 +1,5 @@
-chunk-ex
-========
+McChunk
+=======
 
 Minecraft [Chunk Data](http://wiki.vg/SMP_Map_Format) implementation in Elixir
 
@@ -12,4 +12,4 @@ unzip chunks-1.9.1-pre3-1.zip
 ```
 Use `mix test` to compile and run the tests.
 
-[![Build Status](https://travis-ci.org/Gjum/chunk-ex.svg?branch=master)](https://travis-ci.org/Gjum/chunk-ex)
+[![Build Status](https://travis-ci.org/McEx/McChunk.svg?branch=master)](https://travis-ci.org/McEx/McChunk)
