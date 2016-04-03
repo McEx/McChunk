@@ -2,12 +2,17 @@ language: elixir
 elixir:
   - 1.2.3
 
+branches:
+  only:
+  - master
+  - dev
+
 cache:
   directories:
   - test_chunks
 
 before_script:
-  - "[ -f test_chunks/chunk_-10_5_1457918629636.dump ] || (wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip)"
+  - "[ -f test_chunks/chunk_-10_5_1457918629636.dump ] || (travis_retry wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip)"
 
 script:
 - "mix test"
@@ -18,6 +23,7 @@ after_script:
 notifications:
   irc:
     on_success: change
+    on_failure: change
     skip_join: true
     channels:
       - "irc.freenode.org#McEx"
