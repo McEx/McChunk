@@ -100,6 +100,19 @@ defmodule McChunkTest do
     end
   end
 
+  test "Chunk.get/set_biome" do
+    chunk = %Chunk{}
+    positions = [{0,0}, {12,3}, {0,15}, {15,0}, {15,15}]
+    biomes = [255, 123, 32, 1, 0]
+    combined = Enum.zip(positions, biomes)
+    chunk = Enum.reduce(combined, chunk, fn {pos, biome}, chunk ->
+      Chunk.set_biome(chunk, pos, biome)
+    end)
+    for {pos, biome} <- combined do
+      assert biome == Chunk.get_biome(chunk, pos)
+    end
+  end
+
   test "Chunk.get/set_block" do
     # TODO
   end
@@ -139,8 +152,6 @@ defmodule McChunkTest do
       assert 42 == Section.get_block(s, index)
       s = Section.set_block(s, index, 123)
       assert 123 == Section.get_block(s, index)
-      s = Section.set_block(s, index, 42)
-      assert 42 == Section.get_block(s, index)
       assert 1 == s.block_bits
       assert s.palette == [42, 123]
       s

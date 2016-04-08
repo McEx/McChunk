@@ -52,13 +52,14 @@ defmodule McChunk.Chunk do
 
   def get_biome(chunk, {x, z}) do
     start = mod(x, 16) + 16 * mod(z, 16)
-    binary_part(chunk.biome_data, start, 1)
+    <<biome::8>> = binary_part(chunk.biome_data, start, 1)
+    biome
   end
 
   def set_biome(chunk, {x, z}, biome) do
-    raise "Not implemented. Please manually update the whole 256-byte binary for now."
-    # TODO
-    biome_data = chunk.biome_data
+    start = mod(x, 16) + 16 * mod(z, 16)
+    <<before::binary-size(start), _::8, rest::binary>> = chunk.biome_data
+    biome_data = <<before::binary, biome::8, rest::binary>>
     %__MODULE__{chunk | biome_data: biome_data}
   end
 
