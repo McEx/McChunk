@@ -1,6 +1,5 @@
 defmodule McChunk.BitArray do
   use Bitwise
-  alias McChunk.Palette
 
   @behaviour McChunk.BlockStore
 
