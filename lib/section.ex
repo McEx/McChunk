@@ -1,12 +1,13 @@
 defmodule McChunk.Section do
   use Bitwise
   import McChunk.Varint
+  alias McChunk.BlockStore
   alias McChunk.Palette
   alias McChunk.Nibbles
 
   # count block usages for empty chunk deletion, reuse unused palette entries?
   defstruct y: -1, palette: [0], block_bits: 1,
-            block_array: :array.new(64, default: 0),
+            block_array: BlockStore.new(64),
             block_light: Nibbles.new(4096),
             sky_light: Nibbles.new(4096)
 
@@ -19,7 +20,7 @@ defmodule McChunk.Section do
     end
 
     {num_longs, data} = decode_varint(data)
-    {block_array, data} = decode_block_data(data, num_longs)
+    {block_array, data} = BlockStore.decode(data, num_longs)
 
     {block_light, data} = Nibbles.decode(data, 4096)
 
@@ -34,17 +35,8 @@ defmodule McChunk.Section do
       block_light: block_light, sky_light: sky_light}, data}
   end
 
-  defp decode_block_data(data, num_longs) do
-    arr = :array.new(num_longs)
-    Enum.reduce(0..(num_longs - 1), {arr, data}, fn i, {arr, data} ->
-      <<long_val::big-integer-size(64), data::binary>> = data
-      {:array.set(i, long_val, arr), data}
-    end)
-  end
-
   def encode(section, has_sky \\ true) do
-    block_longs = for long_val <- :array.to_list(section.block_array),
-      do: <<long_val::big-integer-size(64)>>
+    block_longs = BlockStore.encode(section.block_array)
     sky_light = if has_sky, do: Nibbles.encode(section.sky_light), else: []
     [
       section.block_bits,
@@ -63,7 +55,7 @@ defmodule McChunk.Section do
       bb -> {true, bb}
     end
 
-    block_key = bitarray_get(arr, bbits, index)
+    block_key = BlockStore.get(arr, bbits, index)
     if uses_palette do
       Enum.at(palette, block_key)
     else
@@ -73,50 +65,10 @@ defmodule McChunk.Section do
 
   def set_block(section, index, block) do
     {palette, bbits, arr, block_key} = lookup_or_grow(section, block)
-    arr = bitarray_set(arr, bbits, index, block_key)
+    arr = BlockStore.set(arr, bbits, index, block_key)
     # TODO shrink the palette if we overwrote the last usage of a block
 
     %__MODULE__{section | palette: palette, block_bits: bbits, block_array: arr}
-  end
-
-  defp bitarray_get(arr, bbits, index) do
-    max_value = (1 <<< bbits) - 1
-    start_long = div(index * bbits, 64)
-    start_offset = rem(index * bbits, 64)
-    end_long = div((index + 1) * bbits - 1, 64)
-
-    start_val = :array.get(start_long, arr) >>> start_offset
-
-    if start_long == end_long do
-      start_val
-    else
-      end_offset = 64 - start_offset
-      end_val = :array.get(end_long, arr) <<< end_offset
-
-      (start_val ||| end_val)
-    end &&& max_value
-  end
-
-  defp bitarray_set(arr, bbits, index, value) do
-    max_value = (1 <<< bbits) - 1
-    start_long = div(index * bbits, 64)
-    start_offset = rem(index * bbits, 64)
-    end_long = div((index + 1) * bbits - 1, 64)
-
-    start_val_a = :array.get(start_long, arr) &&& bnot(max_value <<< start_offset)
-    start_val_b = (value &&& max_value) <<< start_offset
-    arr = :array.set(start_long, start_val_a ||| start_val_b, arr)
-
-    if start_long != end_long do
-      end_offset = 64 - start_offset
-      j1 = bbits - end_offset
-      end_val_a = :array.get(end_long, arr) >>> j1 <<< j1
-      end_val_b = (value &&& max_value) >>> end_offset
-
-      :array.set(end_long, end_val_a ||| end_val_b, arr)
-    else
-      arr
-    end
   end
 
   defp lookup_or_grow(%__MODULE__{palette: [], block_bits: 0, block_array: arr}, block),
@@ -134,10 +86,10 @@ defmodule McChunk.Section do
 
         else # palette requires more bits, grow block_array
           new_num_longs = trunc Float.ceil(4096 * required_bbits / 8 / 8)
-          new_arr = :array.new(new_num_longs, default: 0)
-          new_arr = Enum.reduce(0..4095, new_arr, fn index, arr ->
-            value = bitarray_get(arr, bbits, index)
-            bitarray_set(arr, bbits, index, value)
+          new_arr = BlockStore.new(new_num_longs)
+          new_arr = Enum.reduce(0..4095, new_arr, fn index, new_arr ->
+            value = BlockStore.get(arr, bbits, index)
+            BlockStore.set(new_arr, required_bbits, index, value)
           end)
 
           {new_palette, required_bbits, new_arr, block_key}
