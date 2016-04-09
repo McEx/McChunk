@@ -187,8 +187,12 @@ defmodule McChunkTest do
 
     # one more block to require 5 bits
     s = Section.set_block(s, 33, 43)
-    assert 43 == Section.get_block(s, 33)
     assert 5 == s.block_bits
+    assert 43 == Section.get_block(s, 33)
+    # resizing did not change previous blocks
+    for {index, block} <- Enum.zip(indices, blocks) do
+      assert block == Section.get_block(s, index)
+    end
 
     # TODO check that block_data changed
     # TODO global palette
