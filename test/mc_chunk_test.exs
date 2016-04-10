@@ -54,8 +54,10 @@ defmodule McChunkTest do
     encoded_small_section_binary = IO.iodata_to_binary Section.encode(Section.new())
     assert @small_section_binary == encoded_small_section_binary
 
-    large_section = %{Section.new() | block_bits: 8, palette: (for _ <- 0..63, do: 0),
-                      block_array: apply(@block_store, :new, [64*8])}
+    large_section = Section.new(
+      block_bits: 8,
+      palette: (for _ <- 0..63, do: 0),
+      block_array: apply(@block_store, :new, [64*8]))
     encoded_large_section_binary = IO.iodata_to_binary Section.encode(large_section)
     assert @large_section_binary == encoded_large_section_binary
     # TODO data, global palette, no sky light
@@ -153,7 +155,7 @@ defmodule McChunkTest do
 
   test "Section.get/set_block" do
     # single bit, two palette entries, non-zero first entry
-    s = %{Section.new() | palette: [42, 123]}
+    s = Section.new(palette: [42, 123])
     s = Enum.reduce([{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
       index = Chunk.pos_to_index(pos)
       assert 42 == Section.get_block(s, index)
