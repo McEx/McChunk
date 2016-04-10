@@ -1,0 +1,14 @@
+[package]
+name = "mc_chunk_native"
+version = "0.1.0"
+authors = []
+
+[lib]
+name = "mc_chunk_native"
+path = "src/nif.rs"
+crate_type = ["dylib"]
+
+[dependencies]
+rustler = "*"
+rustler_codegen = "*"
+byteorder = "0.5.1"
