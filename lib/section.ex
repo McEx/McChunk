@@ -36,13 +36,13 @@ defmodule McChunk.Section do
   end
 
   def encode(section, has_sky \\ true) do
-    block_longs = apply(@block_store, :encode, [section.block_array])
+    block_data = IO.iodata_to_binary apply(@block_store, :encode, [section.block_array])
     sky_light = if has_sky, do: Nibbles.encode(section.sky_light), else: []
     [
       section.block_bits,
       Palette.encode(section.palette),
-      encode_varint(length block_longs),
-      block_longs,
+      encode_varint(byte_size(block_data) |> div(8)),
+      block_data,
       Nibbles.encode(section.block_light)
       | sky_light
     ]
