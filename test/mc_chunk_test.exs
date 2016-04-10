@@ -24,8 +24,6 @@ defmodule McChunkTest do
 
   @small_section_binary <<1, 1, 0, 64, 0::4096*9>>
   @large_section_binary <<8, 64, 0::512, 128, 4, 0::4096*8, 0::4096*8>>
-  @large_section %{Section.new() | block_bits: 8, palette: (for _ <- 0..63, do: 0),
-                          block_array: apply(@block_store, :new, [64*8])}
 
   test "section decoding" do
     {s, rest} = Section.decode(@small_section_binary, -1)
@@ -53,8 +51,13 @@ defmodule McChunkTest do
   end
 
   test "section encoding" do
-    assert @small_section_binary == IO.iodata_to_binary Section.encode(Section.new())
-    assert @large_section_binary == IO.iodata_to_binary Section.encode(@large_section)
+    encoded_small_section_binary = IO.iodata_to_binary Section.encode(Section.new())
+    assert @small_section_binary == encoded_small_section_binary
+
+    large_section = %{Section.new() | block_bits: 8, palette: (for _ <- 0..63, do: 0),
+                      block_array: apply(@block_store, :new, [64*8])}
+    encoded_large_section_binary = IO.iodata_to_binary Section.encode(large_section)
+    assert @large_section_binary == encoded_large_section_binary
     # TODO data, global palette, no sky light
   end
 
