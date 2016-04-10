@@ -3,13 +3,18 @@ defmodule McChunk.Section do
   alias McChunk.Palette
   alias McChunk.Nibbles
 
-  @block_store Application.get_env(:mc_chunk, :block_store, McChunk.BitArray)
+  @block_store Application.get_env(:mc_chunk, :block_store)
 
   # count block usages for empty chunk deletion, reuse unused palette entries?
-  defstruct y: -1, palette: [0], block_bits: 1,
-            block_array: apply(@block_store, :new, [64]),
-            block_light: Nibbles.new(4096),
-            sky_light: Nibbles.new(4096)
+  defstruct [:y, :palette, :block_bits, :block_array, :block_light, :sky_light]
+
+  # TODO optional args: y and palette, so it won't grow unnecessarily?
+  def new() do
+    %__MODULE__{y: -1, palette: [0], block_bits: 1,
+                block_array: apply(@block_store, :new, [64]),
+                block_light: Nibbles.new(4096),
+                sky_light: Nibbles.new(4096)}
+  end
 
   def decode(data, y, has_sky \\ true) do
     <<block_bits::8, data::binary>> = data

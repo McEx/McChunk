@@ -101,7 +101,7 @@ defmodule McChunk.Chunk do
 
   defp update_section(chunk, {x, y, z}, func) when y >= 0 and y < 256 do
     %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(y, 16),
-      &func.(&1 || %Section{y: div(y, 16)}, pos_to_index({x, y, z})))}
+      &func.(&1 || %{Section.new() | y: div(y, 16)}, pos_to_index({x, y, z})))}
   end
 
   ##### helpers

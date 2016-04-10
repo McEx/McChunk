@@ -5,6 +5,8 @@ defmodule McChunkTest do
   alias McChunk.Palette
   alias McChunk.Nibbles
 
+  @block_store Application.get_env(:mc_chunk, :block_store)
+
   @varint300 0b1_0101100_0_0000010
 
   test "chunk decoding" do
@@ -20,11 +22,9 @@ defmodule McChunkTest do
     # TODO data, into, partial, no sky light
   end
 
-  @block_store Application.get_env(:mc_chunk, :block_store, McChunk.NativeStore)
-
   @small_section_binary <<1, 1, 0, 64, 0::4096*9>>
   @large_section_binary <<8, 64, 0::512, 128, 4, 0::4096*8, 0::4096*8>>
-  @large_section %Section{block_bits: 8, palette: (for _ <- 0..63, do: 0),
+  @large_section %{Section.new() | block_bits: 8, palette: (for _ <- 0..63, do: 0),
                           block_array: apply(@block_store, :new, [64*8])}
 
   test "section decoding" do
@@ -53,7 +53,7 @@ defmodule McChunkTest do
   end
 
   test "section encoding" do
-    assert @small_section_binary == IO.iodata_to_binary Section.encode(%Section{})
+    assert @small_section_binary == IO.iodata_to_binary Section.encode(Section.new())
     assert @large_section_binary == IO.iodata_to_binary Section.encode(@large_section)
     # TODO data, global palette, no sky light
   end
@@ -150,7 +150,7 @@ defmodule McChunkTest do
 
   test "Section.get/set_block" do
     # single bit, two palette entries, non-zero first entry
-    s = %Section{palette: [42, 123]}
+    s = %{Section.new() | palette: [42, 123]}
     s = Enum.reduce([{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
       index = Chunk.pos_to_index(pos)
       assert 42 == Section.get_block(s, index)
