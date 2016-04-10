@@ -19,6 +19,12 @@ defmodule McChunk.Section do
     |> Map.merge(Map.new(args))
   end
 
+  def new_with_palette(palette) do
+    block_bits = Palette.block_bits(palette)
+    block_array = apply(@block_store, :new, [block_bits * 64]) # block_bits * 4096 / 64
+    new(palette: palette, block_bits: block_bits, block_array: block_array)
+  end
+
   def decode(data, y, has_sky \\ true) do
     <<block_bits::8, data::binary>> = data
 
@@ -93,7 +99,7 @@ defmodule McChunk.Section do
           {new_palette, bbits, arr, block_key}
 
         else # palette requires more bits, grow block_array
-          new_num_longs = trunc Float.ceil(4096 * required_bbits / 8 / 8)
+          new_num_longs = required_bbits * 64 # block_bits * 4096 / 64
           new_arr = apply(@block_store, :new, [new_num_longs])
           new_arr = Enum.reduce(0..4095, new_arr, fn index, new_arr ->
             value = apply(@block_store, :get, [arr, bbits, index])

@@ -2,31 +2,35 @@ defmodule McChunk.Bench.SectionBlockAccess do
   use Benchfella
   alias McChunk.Section
 
-  @section_5bit Enum.reduce(0..31, %Section{}, &Section.set_block(&2, &1, &1))
-  @section_7bit Enum.reduce(0..127, %Section{}, &Section.set_block(&2, &1, &1))
-
-  bench "Section.get_block:1bit" do
-    for index <- 0..4095, do: Section.get_block(%Section{}, index)
+  defp build_section(palette_len) do
+    Section.new_with_palette(for i <- 1..palette_len, do: i)
   end
 
-  bench "Section.get_block:5bit" do
-    for index <- 0..4095, do: Section.get_block(@section_5bit, index)
-  end
+  # includes some indices split between longs
+  @indices [0, 1, 9, 12, 4083, 4086, 4094, 4095]
 
-  bench "Section.get_block:7bit" do
-    for index <- 0..4095, do: Section.get_block(@section_7bit, index)
-  end
+  bench "Section.get_block (1 bit)",
+    [section: build_section(2)],
+    do: for index <- @indices, do: Section.get_block(section, index)
 
-  bench "Section.set_block:1bit" do
-    for index <- 0..4095, do: Section.set_block(%Section{}, index, 0)
-  end
+  bench "Section.get_block (5 bits)",
+    [section: build_section(32)],
+    do: for index <- @indices, do: Section.get_block(section, index)
 
-  bench "Section.set_block:5bit" do
-    for index <- 0..4095, do: Section.set_block(@section_5bit, index, 0)
-  end
+  bench "Section.get_block (7 bits)",
+    [section: build_section(128)],
+    do: for index <- @indices, do: Section.get_block(section, index)
 
-  bench "Section.set_block:7bit" do
-    for index <- 0..4095, do: Section.set_block(@section_7bit, index, 0)
-  end
+  bench "Section.set_block (1 bit)",
+    [section: build_section(2)],
+    do: for index <- @indices, do: Section.set_block(section, index, 1)
+
+  bench "Section.set_block (5 bits)",
+    [section: build_section(32)],
+    do: for index <- @indices, do: Section.set_block(section, index, 1)
+
+  bench "Section.set_block (7 bits)",
+    [section: build_section(128)],
+    do: for index <- @indices, do: Section.set_block(section, index, 1)
 
 end

@@ -2,7 +2,7 @@ defmodule McChunk.Bench.NibblesAccess do
   use Benchfella
   alias McChunk.Nibbles
 
-  @arr <<0::4096*4>> |> Nibbles.decode(4096) |> elem(0)
+  @arr Nibbles.new(4096)
 
   bench "Nibbles.get" do
     for index <- 0..4095, do: Nibbles.get(@arr, index)
