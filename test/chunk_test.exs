@@ -18,20 +18,6 @@ defmodule McChunk.Test.Chunk do
     # TODO data, into, partial, no sky light
   end
 
-  test "Chunk.pos_to_index" do
-    for pos <- [{0, -1, 0}, {0, -999, 0}, {0, 256, 0}, {0, 999, 0}] do
-      assert_raise FunctionClauseError, fn ->
-        Chunk.pos_to_index(pos)
-      end
-    end
-    for pos <- [{0, 0, 0}, {0, 16, 64}, {-16, 64, -32}] do
-      assert 0 == Chunk.pos_to_index(pos)
-    end
-    for pos <- [{15, 31, 63}, {-1, 255, -65}] do
-      assert 4095 == Chunk.pos_to_index(pos)
-    end
-  end
-
   test "Chunk.get/set_biome" do
     chunk = %Chunk{}
     positions = [{0,0}, {12,3}, {0,15}, {15,0}, {15,15}]

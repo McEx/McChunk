@@ -1,5 +1,6 @@
 Code.require_file "test_helper.exs", __DIR__
 import McChunk.Test.Helpers
+import McChunk.Utils
 
 defmodule McChunk.Test.Section do
   use ExUnit.Case, async: true
@@ -51,7 +52,7 @@ defmodule McChunk.Test.Section do
     # single bit, two palette entries, non-zero first entry
     s = Section.new(palette: [42, 123])
     s = Enum.reduce([{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
-      index = McChunk.Chunk.pos_to_index(pos)
+      index = pos_to_index(pos)
       assert 42 == Section.get_block(s, index)
       s = Section.set_block(s, index, 123)
       assert 123 == Section.get_block(s, index)
