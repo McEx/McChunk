@@ -2,8 +2,7 @@ defmodule McChunk.Section do
   import McChunk.Varint
   alias McChunk.Palette
   alias McChunk.Nibbles
-
-  @block_store Application.get_env(:mc_chunk, :block_store)
+  alias McChunk.BlockStore
 
   # count block usages for empty chunk deletion, reuse unused palette entries?
   defstruct [:y, :palette, :block_bits, :block_array, :block_light, :sky_light]
@@ -12,7 +11,7 @@ defmodule McChunk.Section do
     %__MODULE__{
       palette: [0],
       block_bits: 1,
-      block_array: apply(@block_store, :new, [64]),
+      block_array: BlockStore.new(64),
       block_light: Nibbles.new(4096),
       sky_light: Nibbles.new(4096),
     }
@@ -21,7 +20,7 @@ defmodule McChunk.Section do
 
   def new_with_palette(palette) do
     block_bits = Palette.block_bits(palette)
-    block_array = apply(@block_store, :new, [block_bits * 64]) # block_bits * 4096 / 64
+    block_array = BlockStore.new(block_bits * 64) # block_bits * 4096 / 64
     new(palette: palette, block_bits: block_bits, block_array: block_array)
   end
 
@@ -34,7 +33,7 @@ defmodule McChunk.Section do
     end
 
     {num_longs, data} = decode_varint(data)
-    {block_array, data} = apply(@block_store, :decode, [data, num_longs])
+    {block_array, data} = BlockStore.decode(data, num_longs)
 
     {block_light, data} = Nibbles.decode(data, 4096)
 
@@ -50,7 +49,7 @@ defmodule McChunk.Section do
   end
 
   def encode(section, has_sky \\ true) do
-    block_data = IO.iodata_to_binary apply(@block_store, :encode, [section.block_array])
+    block_data = IO.iodata_to_binary BlockStore.encode(section.block_array)
     sky_light = if has_sky, do: Nibbles.encode(section.sky_light), else: []
     [
       section.block_bits,
@@ -69,7 +68,7 @@ defmodule McChunk.Section do
       bb -> {true, bb}
     end
 
-    block_key = apply(@block_store, :get, [arr, bbits, index])
+    block_key = BlockStore.get(arr, bbits, index)
     if uses_palette do
       Enum.at(palette, block_key)
     else
@@ -79,7 +78,7 @@ defmodule McChunk.Section do
 
   def set_block(section, index, block) do
     {palette, bbits, arr, block_key} = lookup_or_grow(section, block)
-    arr = apply(@block_store, :set, [arr, bbits, index, block_key])
+    arr = BlockStore.set(arr, bbits, index, block_key)
     # TODO shrink the palette if we overwrote the last usage of a block
 
     %__MODULE__{section | palette: palette, block_bits: bbits, block_array: arr}
@@ -100,10 +99,10 @@ defmodule McChunk.Section do
 
         else # palette requires more bits, grow block_array
           new_num_longs = required_bbits * 64 # block_bits * 4096 / 64
-          new_arr = apply(@block_store, :new, [new_num_longs])
+          new_arr = BlockStore.new(new_num_longs)
           new_arr = Enum.reduce(0..4095, new_arr, fn index, new_arr ->
-            value = apply(@block_store, :get, [arr, bbits, index])
-            apply(@block_store, :set, [new_arr, required_bbits, index, value])
+            value = BlockStore.get(arr, bbits, index)
+            BlockStore.set(new_arr, required_bbits, index, value)
           end)
 
           {new_palette, required_bbits, new_arr, block_key}

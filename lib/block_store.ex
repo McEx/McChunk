@@ -12,4 +12,17 @@ defmodule McChunk.BlockStore do
   @callback get(block_store, bbits, index) :: value
   @callback set(block_store, bbits, index, value) :: block_store
 
+  @block_store Application.get_env(:mc_chunk, :block_store)
+
+  def new(num_longs),
+    do: apply(@block_store, :new, [num_longs])
+  def decode(binary, num_longs),
+    do: apply(@block_store, :decode, [binary, num_longs])
+  def encode(block_store),
+    do: apply(@block_store, :encode, [block_store])
+  def get(block_store, bbits, index),
+    do: apply(@block_store, :get, [block_store, bbits, index])
+  def set(block_store, bbits, index, value),
+    do: apply(@block_store, :set, [block_store, bbits, index, value])
+
 end

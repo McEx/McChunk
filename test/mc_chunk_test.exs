@@ -4,8 +4,7 @@ defmodule McChunkTest do
   alias McChunk.Section
   alias McChunk.Palette
   alias McChunk.Nibbles
-
-  @block_store Application.get_env(:mc_chunk, :block_store)
+  alias McChunk.BlockStore
 
   @varint300 0b1_0101100_0_0000010
 
@@ -33,7 +32,7 @@ defmodule McChunkTest do
     assert s.y == -1
 
     # unfilled, default-0 array looks different than filled, compare entries
-    for i <- 0..4095, do: assert 0 == apply(@block_store, :get, [s.block_array, 1, i])
+    for i <- 0..4095, do: assert 0 == BlockStore.get(s.block_array, 1, i)
     for i <- 0..2047, do: assert 0 == :array.get(i, s.block_light)
     for i <- 0..2047, do: assert 0 == :array.get(i, s.sky_light)
 
@@ -43,7 +42,7 @@ defmodule McChunkTest do
     assert s.block_bits == 8
     assert s.y == -1
 
-    for i <- 0..4095, do: assert 0 == apply(@block_store, :get, [s.block_array, 8, i])
+    for i <- 0..4095, do: assert 0 == BlockStore.get(s.block_array, 8, i)
     for i <- 0..2047, do: assert 0 == :array.get(i, s.block_light)
     for i <- 0..2047, do: assert 0 == :array.get(i, s.sky_light)
 
@@ -57,7 +56,7 @@ defmodule McChunkTest do
     large_section = Section.new(
       block_bits: 8,
       palette: (for _ <- 0..63, do: 0),
-      block_array: apply(@block_store, :new, [64*8]))
+      block_array: BlockStore.new(64*8))
     encoded_large_section_binary = IO.iodata_to_binary Section.encode(large_section)
     assert @large_section_binary == encoded_large_section_binary
     # TODO data, global palette, no sky light
