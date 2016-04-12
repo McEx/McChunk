@@ -12,7 +12,7 @@ defmodule McChunk.BlockStore do
   @callback get(block_store, bbits, index) :: value
   @callback set(block_store, bbits, index, value) :: block_store
 
-  @block_store Application.get_env(:mc_chunk, :block_store)
+  @block_store Application.fetch_env!(:mc_chunk, :block_store)
 
   def new(num_longs),
     do: apply(@block_store, :new, [num_longs])
