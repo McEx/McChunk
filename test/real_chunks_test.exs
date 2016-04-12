@@ -7,7 +7,7 @@ defmodule McChunk.Test.RealChunks do
 
   test "load chunk -10,5 and check some blocks" do
     path = "test_chunks/chunk_-10_5_1457918629636.dump"
-    chunk = Chunk.decode(File.read!(path), -10, 5, 0b1111111, true)
+    chunk = Chunk.decode(File.read!(path), Chunk.new, {true, true, 0b1111111})
 
     assert 7 == length Enum.filter chunk.sections, &(&1)
 
@@ -36,8 +36,8 @@ defmodule McChunk.Test.RealChunks do
       bit_mask_in = bit_mask_from_chunk_path(chunk_path)
 
       bin_in = File.read!(chunk_path)
-      chunk = Chunk.decode(bin_in, x, z, bit_mask_in, true)
-      {bin_out, bit_mask_out} = Chunk.encode(chunk)
+      chunk = Chunk.decode(bin_in, Chunk.new, {true, true, bit_mask_in})
+      {bin_out, bit_mask_out} = Chunk.encode(chunk, {true, true, 0})
 
       if bit_mask_in != bit_mask_out or bin_in != IO.iodata_to_binary(bin_out) do
         n_diff_sections = chunk.sections |> Enum.filter(&(&1)) |> length

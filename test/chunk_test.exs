@@ -6,20 +6,20 @@ defmodule McChunk.Test.Chunk do
   alias McChunk.Chunk
 
   test "chunk decoding" do
-    assert %Chunk{} == Chunk.decode("", 0, 0, 0, false)
-    assert %Chunk{} == Chunk.decode(<<0::2048>>, 0, 0, 0, true)
+    assert Chunk.new == Chunk.decode("", Chunk.new, {true, false, 0})
+    assert Chunk.new == Chunk.decode(<<0::2048>>, Chunk.new, {true, true, 0})
     # TODO data, into, partial, no sky light
   end
 
   test "chunk encoding" do
-    {iodata, bit_mask} = Chunk.encode(%Chunk{})
+    {iodata, bit_mask} = Chunk.encode(Chunk.new, {true, true, 0})
     assert 0 == bit_mask
     assert <<0::2048>> == IO.iodata_to_binary iodata
     # TODO data, into, partial, no sky light
   end
 
   test "Chunk.get/set_biome" do
-    chunk = %Chunk{}
+    chunk = Chunk.new
     positions = [{0,0}, {12,3}, {0,15}, {15,0}, {15,15}]
     biomes = [255, 123, 32, 1, 0]
     combined = Enum.zip(positions, biomes)
@@ -32,7 +32,7 @@ defmodule McChunk.Test.Chunk do
   end
 
   test "Chunk.(get|set)_(block|sky)_light" do
-    c = %Chunk{}
+    c = Chunk.new
     positions = [{0,0,0}, {15,15,15}, {0,16,0}, {15,16,15}, {15,255,15}]
     bls = repeat([15, 0, 12, 3], length positions)
     sls = repeat([12, 0, 3, 15], length positions)

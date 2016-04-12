@@ -54,7 +54,7 @@ defmodule McChunk.Test.Section do
     # single bit, two palette entries, non-zero first entry
     s = Section.new(palette: [42, 123])
     s = Enum.reduce([{0, 0, 0}, {15, 255, -9999}], s, fn pos, s ->
-      index = pos_to_index(pos)
+      index = pos3_to_index(pos)
       assert 42 == Section.get_block(s, index)
       s = Section.set_block(s, index, 123)
       assert 123 == Section.get_block(s, index)

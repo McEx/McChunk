@@ -4,61 +4,72 @@ defmodule McChunk.Chunk do
   alias McChunk.Section
   alias McChunk.Nibbles
 
-  defstruct x: 0, z: 0,
+  defstruct has_sky: true,
             biome_data: <<0::2048>>,
             sections: for _ <- 0..15, do: nil
 
+  def new(), do: %__MODULE__{}
+
   ##### de-/serialization
 
-  def decode(data, x, z, bit_mask, has_biome_data, into \\ %__MODULE__{}) do
+  def decode(data, into, {has_sky, has_biome, bit_mask}) do
     {sections, data} =
       into.sections
       |> Enum.with_index
       |> Enum.reduce({[], data}, fn {old_section, y}, {sections, data} ->
-        case ((bit_mask >>> y) &&& 1) do
-          0 -> {[old_section | sections], data}
-          1 ->
-            {section, data} = Section.decode(data, y)
-            {[section | sections], data}
+        if ((bit_mask >>> y) &&& 1) == 1 do
+          {section, data} = Section.decode(data, y, has_sky)
+          {[section | sections], data}
+        else
+          {[old_section | sections], data}
         end
       end)
     sections = Enum.reverse sections
 
-    biome_data = if has_biome_data do
+    biome_data = if has_biome do
       if byte_size(data) != 256, do: raise "wrong biome data size: #{byte_size(data)}"
       data
     else
       into.biome_data
     end
 
-    %__MODULE__{into | x: x, z: z, biome_data: biome_data, sections: sections}
+    %__MODULE__{into |
+      has_sky: has_sky,
+      biome_data: biome_data,
+      sections: sections,
+    }
   end
 
-  # sends full chunk and biome data
-  # TODO optional bitmask to send only those chunks
-  def encode(%__MODULE__{biome_data: biome_data, sections: sections}) do
+  def encode(chunk, {has_sky, has_biome, only_bit_mask}) do
+    only_bit_mask = if only_bit_mask == 0,
+      do: 0xffff,
+      else: only_bit_mask
     {data, bit_mask} =
-      sections
+      chunk.sections
       |> Enum.with_index
+      |> Enum.filter(fn {section, y} -> ((only_bit_mask >>> y) &&& 1) == 1 end)
       |> Enum.reduce({[], 0}, fn {section, y}, {data, bit_mask} ->
         case section do
           nil -> {data, bit_mask}
-          section -> {[data, Section.encode(section)], bit_mask ||| (1 <<< y)}
+          section -> {[data, Section.encode(section, has_sky)], bit_mask ||| (1 <<< y)}
         end
       end)
-    {[data, biome_data], bit_mask}
+    data = if has_biome,
+      do: [data, chunk.biome_data],
+      else: data
+    {data, bit_mask}
   end
 
   ##### interaction
 
-  def get_biome(chunk, {x, z}) do
-    start = mod(x, 16) + 16 * mod(z, 16)
+  def get_biome(chunk, pos) do
+    start = pos2_to_index(pos)
     <<biome::8>> = binary_part(chunk.biome_data, start, 1)
     biome
   end
 
-  def set_biome(chunk, {x, z}, biome) do
-    start = mod(x, 16) + 16 * mod(z, 16)
+  def set_biome(chunk, pos, biome) do
+    start = pos2_to_index(pos)
     <<before::binary-size(start), _::8, rest::binary>> = chunk.biome_data
     biome_data = <<before::binary, biome::8, rest::binary>>
     %__MODULE__{chunk | biome_data: biome_data}
@@ -95,14 +106,14 @@ defmodule McChunk.Chunk do
   defp access_section(_, {_, y, _}, _) when y < 0 or y >= 256, do: 0
   defp access_section(chunk, {x, y, z}, func) do
     case Enum.at(chunk.sections, div(y, 16)) do
-      nil -> 0 # chunk is loaded, section is empty
-      section -> func.(section, pos_to_index({x, y, z}))
+      nil -> 0 # chunk is loaded, section is air
+      section -> func.(section, pos3_to_index({x, y, z}))
     end
   end
 
   defp update_section(chunk, {x, y, z}, func) when y >= 0 and y < 256 do
     %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(y, 16),
-      &func.(&1 || Section.new(y: div(y, 16)), pos_to_index({x, y, z})))}
+      &func.(&1 || Section.new(y: div(y, 16)), pos3_to_index({x, y, z})))}
   end
 
 end
