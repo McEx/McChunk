@@ -14,29 +14,32 @@ defmodule McChunk.Test.Palette do
   end
 
   test "palette encoding" do
-    assert "" == IO.iodata_to_binary Palette.encode([])
+    assert <<0>> == IO.iodata_to_binary Palette.encode([])
     assert <<2, 123, 32>> == IO.iodata_to_binary Palette.encode([123, 32])
     assert <<@varint300::16, 0::300*8>> == IO.iodata_to_binary Palette.encode(repeat([0], 300))
     assert <<3, 1, @varint300::16, 0>> == IO.iodata_to_binary Palette.encode([1, 300, 0])
   end
 
   test "calculate block bits for palette" do
-    assert 1 == Palette.block_bits []
-    assert 1 == Palette.block_bits [1]
-    assert 1 == Palette.block_bits [1,2]
+    assert 4 == Palette.block_bits []
+    assert 4 == Palette.block_bits [1]
+    assert 4 == Palette.block_bits [1,2]
 
-    assert 2 == Palette.block_bits Enum.to_list 1..3
-    assert 2 == Palette.block_bits Enum.to_list 1..4
+    assert 4 == Palette.block_bits Enum.to_list 1..3
+    assert 4 == Palette.block_bits Enum.to_list 1..4
 
-    assert 3 == Palette.block_bits Enum.to_list 1..5
-    assert 3 == Palette.block_bits Enum.to_list 1..8
+    assert 4 == Palette.block_bits Enum.to_list 1..5
+    assert 4 == Palette.block_bits Enum.to_list 1..8
 
     assert 4 == Palette.block_bits Enum.to_list 1..9
     assert 4 == Palette.block_bits Enum.to_list 1..16
 
     assert 5 == Palette.block_bits Enum.to_list 1..17
 
-    # TODO cap at 13, like vanilla does
+    assert 8 == Palette.block_bits Enum.to_list 1..129
+    assert 8 == Palette.block_bits Enum.to_list 1..256
+
+    # TODO cap at 8, like vanilla does
   end
 
 end

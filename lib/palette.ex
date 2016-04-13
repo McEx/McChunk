@@ -13,7 +13,6 @@ defmodule McChunk.Palette do
     {[val | vals], data}
   end
 
-  def encode([]), do: []
   def encode(palette) do
     values = for val <- palette, do: encode_varint(val)
     [encode_varint(length values), values]
@@ -21,8 +20,16 @@ defmodule McChunk.Palette do
 
   def lookup(palette, block), do: Enum.find_index(palette, &(&1 == block))
 
-  def block_bits([]), do: 1
-  def block_bits([_]), do: 1
-  def block_bits(palette), do: trunc Float.ceil :math.log2 length palette
+  def block_bits([]), do: 4
+  def block_bits([_]), do: 4
+  def block_bits(palette) do
+    palette
+    |> length
+    |> :math.log2
+    |> Float.ceil
+    |> trunc
+    |> max(4)
+    |> min(8)
+  end
 
 end

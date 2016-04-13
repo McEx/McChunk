@@ -10,8 +10,8 @@ defmodule McChunk.Section do
   def new(args \\ []) do
     %__MODULE__{
       palette: [0],
-      block_bits: 1,
-      block_array: BlockStore.new(1 * 64),
+      block_bits: 4,
+      block_array: BlockStore.new(4 * 64),
       block_light: Nibbles.new(4096, 15),
       sky_light: Nibbles.new(4096, 15),
     }

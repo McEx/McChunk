@@ -9,14 +9,14 @@ defmodule McChunk.Test.Section do
   alias McChunk.Nibbles
 
   @fullbright IO.iodata_to_binary for _ <- 1..4096, do: 0xff
-  @small_section_binary <<1, 1, 0, 64, 0::4096, @fullbright::binary>>
+  @small_section_binary <<4, 1, 0, 128, 2, 0::4096*4, @fullbright::binary>>
   @large_section_binary <<8, 64, 0::512, 128, 4, 0::4096*8, @fullbright::binary>>
 
   test "section decoding" do
     {s, rest} = Section.decode(@small_section_binary, -1)
     assert rest == ""
     assert s.palette == [0]
-    assert s.block_bits == 1
+    assert s.block_bits == 4
     assert s.y == -1
 
     # unfilled, default-0 array looks different than filled, compare entries
@@ -58,7 +58,7 @@ defmodule McChunk.Test.Section do
       assert 42 == Section.get_block(s, index)
       s = Section.set_block(s, index, 123)
       assert 123 == Section.get_block(s, index)
-      assert 1 == s.block_bits
+      assert 4 == s.block_bits
       assert s.palette == [42, 123]
       s
     end)
@@ -71,7 +71,7 @@ defmodule McChunk.Test.Section do
     indices_x_blocks = for index <- indices, block <- new_blocks, do: {index, block}
     s = Enum.reduce(indices_x_blocks, s, fn {index, block}, s ->
       s = Section.set_block(s, index, block)
-      assert s.block_bits > 1
+      assert 4 == s.block_bits
       assert block == Section.get_block(s, index)
       s
     end)
