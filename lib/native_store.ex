@@ -1,10 +1,9 @@
 defmodule McChunk.Native do
+  require Rustler
   @on_load {:init, 0}
 
   def init do
-    path = hd(:filelib.wildcard('mc_chunk_native/target/{debug,release}/libmc_chunk_native.*'))
-    path = :filename.rootname(path)
-    :ok = :erlang.load_nif(path, 0)
+    :ok = Rustler.load_nif("mc_chunk_native")
   end
 
   def n_new(_size), do: nil
