@@ -10,7 +10,7 @@ defmodule McChunk.Nibbles do
   use Bitwise
 
   def new(num_nibbles, default \\ 0),
-    do: :array.new(div(num_nibbles, 2), default: default)
+    do: :array.new(div(num_nibbles, 2), default: default*16 + default)
 
   def decode(data, num_nibbles) do
     arr = :array.new(div(num_nibbles, 2))
