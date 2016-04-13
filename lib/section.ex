@@ -24,6 +24,16 @@ defmodule McChunk.Section do
     new(palette: palette, block_bits: block_bits, block_array: block_array)
   end
 
+  def new_from_old(data) do
+    {section, ""} = Enum.reduce(0..4095, {new, data}, fn index, {section, data} ->
+      <<block::8, data::binary>> = data
+      # section = if block != 0, do: Section.set_block(section, index, block * 16), else: section
+      section = __MODULE__.set_block(section, index, block * 16)
+      {section, data}
+    end)
+    section
+  end
+
   def decode(data, y, has_sky \\ true) do
     <<block_bits::8, data::binary>> = data
 
