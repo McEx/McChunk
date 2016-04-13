@@ -1,3 +1,4 @@
 use Mix.Config
 
-config :mc_chunk, :block_store, McChunk.BitArray
+config :mc_chunk,
+	block_store: McChunk.BitArray
