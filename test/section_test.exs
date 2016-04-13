@@ -6,9 +6,11 @@ defmodule McChunk.Test.Section do
   use ExUnit.Case, async: true
   alias McChunk.Section
   alias McChunk.BlockStore
+  alias McChunk.Nibbles
 
-  @small_section_binary <<1, 1, 0, 64, 0::4096*9>>
-  @large_section_binary <<8, 64, 0::512, 128, 4, 0::4096*8, 0::4096*8>>
+  @fullbright IO.iodata_to_binary for _ <- 1..4096, do: 0xff
+  @small_section_binary <<1, 1, 0, 64, 0::4096, @fullbright::binary>>
+  @large_section_binary <<8, 64, 0::512, 128, 4, 0::4096*8, @fullbright::binary>>
 
   test "section decoding" do
     {s, rest} = Section.decode(@small_section_binary, -1)
@@ -18,9 +20,9 @@ defmodule McChunk.Test.Section do
     assert s.y == -1
 
     # unfilled, default-0 array looks different than filled, compare entries
-    for i <- 0..4095, do: assert 0 == BlockStore.get(s.block_array, 1, i)
-    for i <- 0..2047, do: assert 0 == :array.get(i, s.block_light)
-    for i <- 0..2047, do: assert 0 == :array.get(i, s.sky_light)
+    for i <- 0..4095, do: assert 0 == BlockStore.get(s.block_array, s.block_bits, i)
+    for i <- 0..4095, do: assert 15 == Nibbles.get(s.block_light, i)
+    for i <- 0..4095, do: assert 15 == Nibbles.get(s.sky_light, i)
 
     {s, rest} = Section.decode(@large_section_binary, -1)
     assert rest == ""
@@ -28,9 +30,9 @@ defmodule McChunk.Test.Section do
     assert s.block_bits == 8
     assert s.y == -1
 
-    for i <- 0..4095, do: assert 0 == BlockStore.get(s.block_array, 8, i)
-    for i <- 0..2047, do: assert 0 == :array.get(i, s.block_light)
-    for i <- 0..2047, do: assert 0 == :array.get(i, s.sky_light)
+    for i <- 0..4095, do: assert 0 == BlockStore.get(s.block_array, s.block_bits, i)
+    for i <- 0..4095, do: assert 15 == Nibbles.get(s.block_light, i)
+    for i <- 0..4095, do: assert 15 == Nibbles.get(s.sky_light, i)
 
     # TODO data, global palette, no sky light
   end
