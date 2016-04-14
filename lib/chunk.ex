@@ -116,4 +116,9 @@ defmodule McChunk.Chunk do
       &func.(&1 || Section.new(y: div(y, 16)), pos3_to_index({x, y, z})))}
   end
 
+  defp update_section(chunk, index, func) when index >= 0 and index < 65536 do
+    %__MODULE__{chunk | sections: List.update_at(chunk.sections, div(index, 4096),
+      &func.(&1 || Section.new(y: div(index, 4096)), rem(index, 4096)))}
+  end
+
 end
