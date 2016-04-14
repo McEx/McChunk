@@ -18,7 +18,7 @@ defmodule McChunk.Mixfile do
 
   defp deps do
     [
-      {:rustler, "~> 0.0.2"},
+      {:rustler, "~> 0.0.3"},
       {:benchfella, "~> 0.3.0", only: :dev},
       {:credo, "~> 0.3", only: :dev},
     ]
