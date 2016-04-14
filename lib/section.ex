@@ -59,12 +59,12 @@ defmodule McChunk.Section do
   end
 
   def encode(section, has_sky \\ true) do
-    block_data = IO.iodata_to_binary BlockStore.encode(section.block_array)
+    block_data = BlockStore.encode(section.block_array)
     sky_light = if has_sky, do: Nibbles.encode(section.sky_light), else: []
     [
       section.block_bits,
       Palette.encode(section.palette),
-      encode_varint(byte_size(block_data) |> div(8)),
+      IO.iodata_length(block_data) |> div(8) |> encode_varint,
       block_data,
       Nibbles.encode(section.block_light)
       | sky_light

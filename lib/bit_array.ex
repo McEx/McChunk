@@ -15,7 +15,6 @@ defmodule McChunk.BitArray do
 
   def encode(arr) do
     for val <- :array.to_list(arr), do: <<val::big-integer-size(64)>>
-    |> IO.iodata_to_binary
   end
 
   def get(arr, bbits, index) do
