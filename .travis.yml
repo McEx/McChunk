@@ -12,13 +12,9 @@ cache:
   - test_chunks
   - deps
 
-sudo: required
-
 install:
-  - curl -sf https://raw.githubusercontent.com/brson/multirust/master/blastoff.sh | sh -s -- --yes
   - mix local.hex --force
   - mix deps.get
-  - mix rustler.update_rust
 
 before_script:
   - "[ -f test_chunks/chunk_-10_5_1457918629636.dump ] || (travis_retry wget http://lunarco.de/minecraft/chunks/test_chunks.zip && unzip test_chunks.zip)"
