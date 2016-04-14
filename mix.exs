@@ -7,7 +7,6 @@ defmodule McChunk.Mixfile do
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     compilers: [:rustler] ++ Mix.compilers,
      rustler_crates: ["mc_chunk_native"],
      deps: deps]
   end
@@ -18,7 +17,6 @@ defmodule McChunk.Mixfile do
 
   defp deps do
     [
-      {:rustler, "~> 0.0.3"},
       {:benchfella, "~> 0.3.0", only: :dev},
       {:credo, "~> 0.3", only: :dev},
     ]
