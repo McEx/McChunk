@@ -27,8 +27,8 @@ defmodule McChunk.Section do
   def new_from_old(data) do
     {section, ""} = Enum.reduce(0..4095, {new, data}, fn index, {section, data} ->
       <<block::8, data::binary>> = data
-      # section = if block != 0, do: Section.set_block(section, index, block * 16), else: section
-      section = __MODULE__.set_block(section, index, block * 16)
+      # TODO benchmark this for real chunks, skipping air didn't help in lookup_or_grow
+      section = if block != 0, do: __MODULE__.set_block(section, index, block * 16), else: section
       {section, data}
     end)
     section
